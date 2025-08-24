@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Revenue Analytics - EventPro{% endblock %}
+
+{% block page_title %}Revenue & Ticket Sales{% endblock %}
+
+{% block content %}
+<!-- Revenue Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Revenue</h3>
+            <button class="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center">
+                <i data-lucide="eye" class="w-4 h-4 mr-1"></i>
+                View Report
+            </button>
+        </div>
+        <p class="text-3xl font-bold text-gray-900" id="total-revenue">IDR 7.852.000</p>
+        <p class="text-green-600 text-sm mt-1 flex items-center">
+            <i data-lucide="trending-up" class="w-4 h-4 mr-1"></i>
+            8.1% vs last week
+        </p>
+        <p class="text-gray-500 text-sm mt-2">Sales from 1-7 Dec, 2020</p>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Tickets Sold</h3>
+            <button class="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center">
+                <i data-lucide="eye" class="w-4 h-4 mr-1"></i>
+                View Report
+            </button>
+        </div>
+        <p class="text-3xl font-bold text-gray-900" id="tickets-sold">504</p>
+        <p class="text-green-600 text-sm mt-1 flex items-center">
+            <i data-lucide="trending-up" class="w-4 h-4 mr-1"></i>
+            12.3% vs last week
+        </p>
+        <p class="text-gray-500 text-sm mt-2">From 1-8 Dec, 2020</p>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Average Ticket Price</h3>
+        </div>
+        <p class="text-3xl font-bold text-gray-900" id="avg-price">IDR 15.577</p>
+        <p class="text-red-600 text-sm mt-1 flex items-center">
+            <i data-lucide="trending-down" class="w-4 h-4 mr-1"></i>
+            2.1% vs last week
+        </p>
+        <p class="text-gray-500 text-sm mt-2">Calculated from total sales</p>
+    </div>
+</div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Sales Trend Chart -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900">Ticket Sales Trend</h3>
+                <div class="flex items-center space-x-2 text-sm text-gray-500">
+                    <span class="flex items-center">
+                        <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                        Last 6 days
+                    </span>
+                    <span class="flex items-center">
+                        <div class="w-3 h-3 bg-gray-300 rounded-full mr-2"></div>
+                        Last Week
+                    </span>
+                </div>
+            </div>
+            <div class="h-64">
+                <canvas id="salesChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Revenue Chart -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900">Daily Revenue</h3>
+                <button class="flex items-center space-x-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span class="text-sm font-medium">Export</span>
+                </button>
+            </div>
+            <div class="h-64">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+    </div><!-- Export Section -->
+<div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Export Data</h3>
+    <div class="flex space-x-4">
+        <button onclick="exportData('revenue', 'csv')" class="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>Export as CSV</span>
+        </button>
+        <button onclick="exportData('revenue', 'excel')" class="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>Export as Excel</span>
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let salesChart, revenueChart;
+    
+    // Load revenue analytics data
+    async function loadRevenueData() {
+        try {
+            const response = await fetch('/api/analytics/revenue');
+            const data = await response.json();
+            
+            // Update revenue stats
+            document.getElementById('total-revenue').textContent = `IDR ${data.total.toLocaleString()}`;
+            
+            // Create charts
+            createSalesChart(data.weekly_data);
+            createRevenueChart(data.weekly_data);
+            
+        } catch (error) {
+            console.error('Error loading revenue data:', error);
+        }
+    }
+    
+    function createSalesChart(data) {
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        
+        salesChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.day),
+                datasets: [{
+                    label: 'Ticket Sales',
+                    data: data.map(d => d.sales),
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 2,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+    
+    function createRevenueChart(data) {
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        
+        revenueChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.map(d => d.day),
+                datasets: [{
+                    label: 'Daily Revenue',
+                    data: data.map(d => d.revenue),
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 2,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'INR ' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+    
+    // Export data function
+    async function exportData(type, format) {
+        try {
+            const response = await fetch(`/api/export/${type}`);
+            const data = await response.json();
+            alert(data.message);
+        } catch (error) {
+            console.error('Export error:', error);
+            alert('Export failed. Please try again.');
+        }
+    }
+    
+    // Load data when page loads
+    document.addEventListener('DOMContentLoaded', loadRevenueData);
+</script>
+{% endblock %}

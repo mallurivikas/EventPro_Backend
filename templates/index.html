@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - EventPro{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Total Events</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1" id="total-events">24</p>
+                <p class="text-green-600 text-sm mt-1">+12% vs last week</p>
+            </div>
+            <div class="p-3 rounded-lg bg-blue-50">
+                <i data-lucide="calendar" class="w-6 h-6 text-blue-600"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Total Revenue</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1" id="total-revenue">IDR 7.852.000</p>
+                <p class="text-green-600 text-sm mt-1">+8.1% vs last week</p>
+            </div>
+            <div class="p-3 rounded-lg bg-green-50">
+                <i data-lucide="dollar-sign" class="w-6 h-6 text-green-600"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Total Attendees</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1" id="total-attendees">1,890</p>
+                <p class="text-green-600 text-sm mt-1">+15.3% vs last week</p>
+            </div>
+            <div class="p-3 rounded-lg bg-purple-50">
+                <i data-lucide="users" class="w-6 h-6 text-purple-600"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Avg. Rating</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1" id="avg-rating">4.8</p>
+                <p class="text-green-600 text-sm mt-1">+2.1% vs last week</p>
+            </div>
+            <div class="p-3 rounded-lg bg-orange-50">
+                <i data-lucide="trending-up" class="w-6 h-6 text-orange-600"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Events -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-lg font-semibold text-gray-900">Recent Events</h2>
+        <button class="text-blue-600 hover:text-blue-700 font-medium">View All</button>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead>
+                <tr class="border-b border-gray-100">
+                    <th class="text-left py-3 px-4 font-medium text-gray-600">Event Name</th>
+                    <th class="text-left py-3 px-4 font-medium text-gray-600">Attendees</th>
+                    <th class="text-left py-3 px-4 font-medium text-gray-600">Status</th>
+                    <th class="text-left py-3 px-4 font-medium text-gray-600">Revenue</th>
+                </tr>
+            </thead>
+            <tbody id="recent-events-table">
+                <!-- Events will be populated here -->
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Load dashboard data
+    async function loadDashboardData() {
+        try {
+            const response = await fetch('/api/dashboard');
+            const data = await response.json();
+            
+            // Update stats
+            document.getElementById('total-events').textContent = data.stats.total_events;
+            document.getElementById('total-revenue').textContent = `IDR ${data.stats.total_revenue.toLocaleString()}`;
+            document.getElementById('total-attendees').textContent = data.stats.total_attendees.toLocaleString();
+            document.getElementById('avg-rating').textContent = data.stats.avg_rating;
+            
+            // Update recent events table
+            const tableBody = document.getElementById('recent-events-table');
+            tableBody.innerHTML = '';
+            
+            data.recent_events.forEach(event => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-gray-50 hover:bg-gray-50';
+                
+                const statusColor = event.status === 'live' ? 'bg-green-100 text-green-800' :
+                                  event.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                                  'bg-yellow-100 text-yellow-800';
+                
+                row.innerHTML = `
+                    <td class="py-3 px-4 font-medium text-gray-900">${event.title}</td>
+                    <td class="py-3 px-4 text-gray-600">${event.attendees}</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${statusColor}">
+                            ${event.status}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 font-medium text-gray-900">IDR ${(event.ticketPrice * event.attendees).toLocaleString()}</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+        } catch (error) {
+            console.error('Error loading dashboard data:', error);
+        }
+    }
+    
+    // Load data when page loads
+    document.addEventListener('DOMContentLoaded', loadDashboardData);
+</script>
+{% endblock %}

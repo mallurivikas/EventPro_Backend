@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EventPro - Event Analytics{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .sidebar-active {
+            background-color: rgb(239 246 255);
+            color: rgb(37 99 235);
+            border-right: 2px solid rgb(37 99 235);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white shadow-sm border-r border-gray-100 h-full">
+            <!-- Logo & Back Button -->
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                            <i data-lucide="calendar" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <span class="text-xl font-bold text-gray-800">EventPro</span>
+                    </div>
+                    <a href="/events" class="text-gray-400 hover:text-gray-600">
+                        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                    </a>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <p class="font-medium">{{ event_title }}</p>
+                    <p class="text-xs text-gray-500">Event Analytics</p>
+                </div>
+            </div>
+
+            <!-- Analytics Menu Items -->
+            <nav class="mt-6">
+                <ul class="space-y-1 px-3">
+                    <li>
+                        <a href="/events/{{ event_id }}/pre-event" class="sidebar-link w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900" data-page="pre-event">
+                            <i data-lucide="trending-up" class="w-5 h-5"></i>
+                            <span class="font-medium">Pre-Event Analysis</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/events/{{ event_id }}/engagement" class="sidebar-link w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900" data-page="engagement">
+                            <i data-lucide="users" class="w-5 h-5"></i>
+                            <span class="font-medium">Event Engagement</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/events/{{ event_id }}/post-event" class="sidebar-link w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900" data-page="post-event">
+                            <i data-lucide="message-square" class="w-5 h-5"></i>
+                            <span class="font-medium">Post-Event Analysis</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-auto">
+            <!-- Header -->
+            <div class="bg-white shadow-sm border-b border-gray-100 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <h1 class="text-2xl font-semibold text-gray-800">{% block page_title %}Event Analytics{% endblock %}</h1>
+                    
+                    <div class="flex items-center space-x-4">
+                        <!-- Event Status -->
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2 py-1 rounded-full text-xs font-medium {{ 'bg-green-100 text-green-800' if event_status == 'live' else 'bg-blue-100 text-blue-800' if event_status == 'completed' else 'bg-yellow-100 text-yellow-800' }}">
+                                {{ event_status | title }}
+                            </span>
+                        </div>
+                        
+                        <!-- User Profile -->
+                        <div class="flex items-center space-x-2">
+                            <img
+                                src="https://via.placeholder.com/32"
+                                alt="Profile"
+                                class="w-8 h-8 rounded-full"
+                            />
+                            <span class="text-sm font-medium text-gray-700">Event Host</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Content -->
+            <main class="p-6">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Set active sidebar link
+        const currentPage = window.location.pathname;
+        const sidebarLinks = document.querySelectorAll('.sidebar-link');
+        
+        sidebarLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href === currentPage) {
+                link.classList.add('sidebar-active');
+                link.classList.remove('text-gray-600', 'hover:bg-gray-50', 'hover:text-gray-900');
+            }
+        });
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

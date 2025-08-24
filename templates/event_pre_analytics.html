@@ -1,0 +1,1006 @@
+{% extends "event_base.html" %}
+
+{% block title %}Pre-Event Analytics - {{ event_title }}{% endblock %}
+
+{% block page_title %}
+<div class="flex items-center justify-between">
+    <span>Pre-Event Analysis</span>
+    <button 
+        id="go-live-btn" 
+        onclick="goLive()" 
+        class="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+    >
+        <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+        <span>LIVE NOW</span>
+        <i data-lucide="radio" class="w-4 h-4"></i>
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Revenue Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Revenue</h3>
+            <button class="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center">
+                <i data-lucide="eye" class="w-4 h-4 mr-1"></i>
+                View Report
+            </button>
+        </div>
+        <p class="text-3xl font-bold text-gray-900" id="total-revenue">IDR 0</p>
+        <p class="text-green-600 text-sm mt-1 flex items-center">
+            <i data-lucide="trending-up" class="w-4 h-4 mr-1"></i>
+            <span id="revenue-change">0%</span> vs expected
+        </p>
+        <p class="text-gray-500 text-sm mt-2">Based on current sales</p>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Tickets Sold</h3>
+            <button class="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center">
+                <i data-lucide="eye" class="w-4 h-4 mr-1"></i>
+                View Report
+            </button>
+        </div>
+        <p class="text-3xl font-bold text-gray-900" id="tickets-sold">0</p>
+        <p class="text-green-600 text-sm mt-1 flex items-center">
+            <i data-lucide="trending-up" class="w-4 h-4 mr-1"></i>
+            <span id="tickets-change">0%</span> of capacity
+        </p>
+        <p class="text-gray-500 text-sm mt-2">Tickets available: <span id="tickets-remaining">0</span></p>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Days Until Event</h3>
+        </div>
+        <p class="text-3xl font-bold text-gray-900" id="days-until">0</p>
+        <p class="text-blue-600 text-sm mt-1 flex items-center">
+            <i data-lucide="clock" class="w-4 h-4 mr-1"></i>
+            Event date: <span id="event-date">TBD</span>
+        </p>
+        <p class="text-gray-500 text-sm mt-2">Time remaining for sales</p>
+    </div>
+</div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Sales Trend Chart -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900">Hourly Booking Rate</h3>
+                <div class="flex items-center space-x-2 text-sm text-gray-500">
+                    <span class="flex items-center">
+                        <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                        Bookings per Hour
+                    </span>
+                </div>
+            </div>
+            <div class="h-64">
+                <canvas id="salesChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Revenue Projection Chart -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900">Revenue Projection</h3>
+                <button class="flex items-center space-x-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span class="text-sm font-medium">Export</span>
+                </button>
+            </div>
+            <div class="h-64">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+<!-- Marketing Insights -->
+<div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-6">Marketing Insights</h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="text-center p-4 bg-blue-50 rounded-lg">
+            <div class="text-2xl font-bold text-blue-600" id="conversion-rate">0%</div>
+            <div class="text-sm text-gray-600 mt-1">Conversion Rate</div>
+            <div class="text-xs text-gray-500 mt-1">Views to purchases</div>
+        </div>
+        
+        <div class="text-center p-4 bg-green-50 rounded-lg">
+            <div class="text-2xl font-bold text-green-600" id="avg-purchase-time">0</div>
+            <div class="text-sm text-gray-600 mt-1">Avg. Purchase Time</div>
+            <div class="text-xs text-gray-500 mt-1">Days before event</div>
+        </div>
+        
+        <div class="text-center p-4 bg-orange-50 rounded-lg">
+            <div class="text-2xl font-bold text-orange-600" id="peak-sales-day">TBD</div>
+            <div class="text-sm text-gray-600 mt-1">Peak Sales Day</div>
+            <div class="text-xs text-gray-500 mt-1">Highest ticket sales</div>
+        </div>
+    </div>
+</div>
+
+<!-- Ticket Booking Automation -->
+<div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-6">🤖 Automated Ticket Booking Simulator</h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Simulation Controls -->
+        <div>
+            <h4 class="font-medium text-gray-900 mb-4">Simulation Controls</h4>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Simulation Mode</label>
+                    <select id="simulation-mode" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="quick">Quick Burst (10 bookings)</option>
+                        <option value="medium">Medium Burst (25 bookings)</option>
+                        <option value="large">Large Burst (50 bookings)</option>
+                        <option value="continuous">Continuous (5 minutes)</option>
+                    </select>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Booking Speed</label>
+                        <select id="booking-speed" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="slow">Slow (3-5s delay)</option>
+                            <option value="medium" selected>Medium (1-3s delay)</option>
+                            <option value="fast">Fast (0.5-1s delay)</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Ticket Price</label>
+                        <div class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
+                            {{ event.currency if event else 'INR' }} {{ event.ticketPrice if event else 25000 }}
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Fixed price from event settings</p>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button 
+                        id="start-simulation" 
+                        onclick="startBookingSimulation()" 
+                        class="flex-1 flex items-center justify-center space-x-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                        <i data-lucide="play" class="w-4 h-4"></i>
+                        <span>Start Simulation</span>
+                    </button>
+                    
+                    <button 
+                        id="stop-simulation" 
+                        onclick="stopBookingSimulation()" 
+                        class="px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        disabled
+                    >
+                        <i data-lucide="stop-circle" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Simulation Status -->
+        <div>
+            <h4 class="font-medium text-gray-900 mb-4">Simulation Status</h4>
+            <div class="space-y-4">
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-600">Status</span>
+                        <span id="simulation-status" class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Idle</span>
+                    </div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-600">Bookings Generated</span>
+                        <span id="bookings-generated" class="font-bold text-gray-900">0</span>
+                    </div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-600">Revenue Generated</span>
+                        <span id="revenue-generated" class="font-bold text-green-600">{{ event.currency if event else "INR" }} 0</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 mt-3">
+                        <div id="simulation-progress" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <button 
+                        onclick="exportSimulationData()" 
+                        class="flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 w-full"
+                    >
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span>Export Simulation Data</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Section -->
+<div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Export Pre-Event Data</h3>
+    <div class="flex flex-wrap gap-4">
+        <button onclick="exportData('sales', 'csv')" class="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>Export Sales Data</span>
+        </button>
+        <button onclick="exportData('revenue', 'excel')" class="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>Export Revenue Report</span>
+        </button>
+        <button onclick="exportLiveBookings()" class="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>Export Live Bookings</span>
+        </button>
+    </div>
+</div>
+
+<!-- Live Booking Feed -->
+<div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">Live Booking Feed</h3>
+        <div class="flex items-center space-x-2">
+            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span class="text-sm text-gray-600">Live</span>
+        </div>
+    </div>
+    <div class="space-y-3 max-h-60 overflow-y-auto" id="live-bookings">
+        <!-- Live bookings will appear here -->
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let salesChart, revenueChart;
+    const eventId = "{{ event_id }}";
+    let simulationInterval = null;
+    let simulationBookingsCount = 0;
+    let simulationTotalRevenue = 0;
+    let simulationData = [];
+    let hourlyBookings = {}; // Track bookings per hour
+    let currentHour = new Date().getHours();
+    const firstNames = ['John', 'Sarah', 'Mike', 'Emily', 'David', 'Lisa', 'Chris', 'Anna', 'Kevin', 'Maria', 'Tom', 'Jessica', 'Ryan', 'Amy', 'Alex'];
+    const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson'];
+    const domains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'company.com', 'email.com', 'mail.com'];
+    
+    // Load event data
+    async function loadEventData() {
+        try {
+            const response = await fetch(`/api/events/${eventId}/analytics`);
+            const data = await response.json();
+            
+            updateEventStats(data);
+            createCharts(data);
+            
+        } catch (error) {
+            console.error('Error loading event data:', error);
+            // Use mock data if API fails
+            loadMockData();
+        }
+    }
+    
+    function loadMockData() {
+        // Get actual ticket price from event data
+        const ticketPrice = parseInt('{{ event.ticketPrice if event else 25000 }}');
+        const currency = '{{ event.currency if event else "INR" }}';
+        
+        // Generate realistic data based on actual ticket price
+        const baseRevenue = ticketPrice * 12; // 12 tickets on day 1
+        
+        const mockData = {
+            event: {
+                id: eventId,
+                title: '{{ event_title }}',
+                date: '2024-03-15',
+                capacity: 500,
+                ticketPrice: ticketPrice,
+                currency: currency,
+                attendees: 180
+            },
+            revenue: ticketPrice * 180, // Actual revenue based on tickets sold
+            salesData: [
+                {day: 'Day 1', sales: 12, revenue: ticketPrice * 12},
+                {day: 'Day 2', sales: 18, revenue: ticketPrice * 18},
+                {day: 'Day 3', sales: 25, revenue: ticketPrice * 25},
+                {day: 'Day 4', sales: 32, revenue: ticketPrice * 32},
+                {day: 'Day 5', sales: 28, revenue: ticketPrice * 28},
+                {day: 'Day 6', sales: 35, revenue: ticketPrice * 35},
+                {day: 'Day 7', sales: 30, revenue: ticketPrice * 30}
+            ]
+        };
+        
+        updateEventStats(mockData);
+        createCharts(mockData);
+    }
+    
+    function updateEventStats(data) {
+        const event = data.event;
+        const revenue = data.revenue || 0;
+        const ticketsSold = event.attendees || 0;
+        const capacity = event.capacity || 0;
+        const ticketPrice = event.ticketPrice || 0;
+        const currency = event.currency || 'INR';
+        
+        // Calculate derived metrics
+        const ticketsRemaining = capacity - ticketsSold;
+        const ticketsSoldPercent = capacity > 0 ? Math.round((ticketsSold / capacity) * 100) : 0;
+        const revenueProjected = ticketPrice * capacity;
+        const revenuePercent = revenueProjected > 0 ? Math.round((revenue / revenueProjected) * 100) : 0;
+        
+        // Calculate days until event
+        const eventDate = new Date(event.date);
+        const today = new Date();
+        const daysUntil = Math.ceil((eventDate - today) / (1000 * 60 * 60 * 24));
+        
+        // Format revenue based on currency and amount
+        let revenueText;
+        if (currency === 'USD' || currency === 'EUR') {
+            // For USD/EUR, show with appropriate scaling
+            if (revenue >= 1000000) {
+                revenueText = `${currency} ${(revenue / 1000000).toFixed(1)}M`;
+            } else if (revenue >= 1000) {
+                revenueText = `${currency} ${(revenue / 1000).toFixed(0)}K`;
+            } else {
+                revenueText = `${currency} ${revenue.toLocaleString()}`;
+            }
+        } else {
+            // For INR and other currencies
+            if (revenue >= 10000000) {
+                revenueText = `${currency} ${(revenue / 10000000).toFixed(1)} Cr`;
+            } else if (revenue >= 100000) {
+                revenueText = `${currency} ${(revenue / 100000).toFixed(1)} L`;
+            } else if (revenue >= 1000) {
+                revenueText = `${currency} ${(revenue / 1000).toFixed(0)}K`;
+            } else {
+                revenueText = `${currency} ${revenue.toLocaleString()}`;
+            }
+        }
+        
+        // Update DOM
+        document.getElementById('total-revenue').textContent = revenueText;
+        document.getElementById('revenue-change').textContent = `${revenuePercent}%`;
+        document.getElementById('tickets-sold').textContent = ticketsSold.toLocaleString();
+        document.getElementById('tickets-change').textContent = `${ticketsSoldPercent}%`;
+        document.getElementById('tickets-remaining').textContent = ticketsRemaining.toLocaleString();
+        document.getElementById('days-until').textContent = Math.max(0, daysUntil);
+        document.getElementById('event-date').textContent = event.date;
+        
+        // Update marketing insights with realistic data based on event size
+        const conversionRate = ticketsSold > 100 ? '3.2%' : ticketsSold > 50 ? '2.8%' : '2.1%';
+        const avgPurchaseTime = daysUntil > 30 ? '12 days' : daysUntil > 14 ? '8 days' : '5 days';
+        const peakDay = ticketsSold > 100 ? 'Friday' : 'Wednesday';
+        
+        document.getElementById('conversion-rate').textContent = conversionRate;
+        document.getElementById('avg-purchase-time').textContent = avgPurchaseTime;
+        document.getElementById('peak-sales-day').textContent = peakDay;
+    }
+    
+    function createCharts(data) {
+        createSalesChart(data.salesData || []);
+        createRevenueChart(data.salesData || []);
+    }
+    
+    function createSalesChart(salesData) {
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        
+        // Initialize hourly data for the last 12 hours with realistic patterns
+        const now = new Date();
+        const hours = [];
+        const bookingCounts = [];
+        
+        for (let i = 11; i >= 0; i--) {
+            const hour = new Date(now.getTime() - i * 60 * 60 * 1000);
+            const hourKey = hour.getHours();
+            const hourLabel = hour.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: false 
+            });
+            
+            hours.push(hourLabel);
+            
+            // Generate realistic booking patterns based on time of day
+            let bookingCount = 0;
+            if (hourKey >= 9 && hourKey <= 17) {
+                // Business hours: higher activity
+                bookingCount = Math.floor(Math.random() * 8) + 2; // 2-10 bookings
+            } else if (hourKey >= 18 && hourKey <= 22) {
+                // Evening: moderate activity
+                bookingCount = Math.floor(Math.random() * 5) + 1; // 1-6 bookings
+            } else {
+                // Night/early morning: low activity
+                bookingCount = Math.floor(Math.random() * 2); // 0-2 bookings
+            }
+            
+            // Add any existing tracked bookings
+            bookingCount += (hourlyBookings[hourKey] || 0);
+            bookingCounts.push(bookingCount);
+        }
+        
+        salesChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: hours,
+                datasets: [{
+                    label: 'Bookings per Hour',
+                    data: bookingCounts,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#3b82f6',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 2,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        suggestedMax: Math.max(10, Math.max(...bookingCounts) + 2),
+                        ticks: {
+                            stepSize: 1,
+                            callback: function(value) {
+                                return Math.floor(value) + ' bookings';
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.parsed.y} bookings at ${context.label}`;
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                }
+            }
+        });
+    }
+    
+    function createRevenueChart(salesData) {
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        const currency = '{{ event.currency if event else "INR" }}';
+        const ticketPrice = parseInt('{{ event.ticketPrice if event else 25000 }}');
+        
+        // Create cumulative revenue data
+        let cumulative = 0;
+        const cumulativeData = salesData.map(d => {
+            cumulative += d.revenue;
+            return cumulative;
+        });
+        
+        // Determine appropriate scale based on ticket price
+        let formatFunction;
+        let maxValue = Math.max(...cumulativeData);
+        
+        if (ticketPrice >= 100000) {
+            // For high-price tickets (INR 100K+), show in millions
+            formatFunction = (value) => currency + ' ' + (value / 1000000).toFixed(1) + 'M';
+        } else if (ticketPrice >= 10000) {
+            // For mid-price tickets (INR 10K+), show in thousands
+            formatFunction = (value) => currency + ' ' + (value / 1000).toFixed(0) + 'K';
+        } else {
+            // For low-price tickets, show actual value
+            formatFunction = (value) => currency + ' ' + value.toLocaleString();
+        }
+        
+        revenueChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: salesData.map(d => d.day),
+                datasets: [{
+                    label: 'Cumulative Revenue',
+                    data: cumulativeData,
+                    backgroundColor: '#10b981',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 2,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: formatFunction
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Revenue: ${formatFunction(context.parsed.y)}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Export data function
+    async function exportData(type, format) {
+        try {
+            const response = await fetch(`/api/export/${type}`);
+            const data = await response.json();
+            alert(data.message);
+        } catch (error) {
+            console.error('Export error:', error);
+            alert('Export failed. Please try again.');
+        }
+    }
+    
+    // Export live bookings as CSV
+    async function exportLiveBookings() {
+        try {
+            const response = await fetch('/api/export-bookings');
+            const blob = await response.blob();
+            
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `live_bookings_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            alert('Live bookings exported successfully!');
+        } catch (error) {
+            console.error('Export error:', error);
+            alert('Export failed. Please try again.');
+        }
+    }
+    
+    // Load and display live bookings
+    async function loadLiveBookings() {
+        try {
+            const response = await fetch('/api/live-sales');
+            const data = await response.json();
+            
+            displayLiveBookings(data.recent_bookings || []);
+            updateLiveStats(data);
+            
+        } catch (error) {
+            console.error('Error loading live bookings:', error);
+        }
+    }
+    
+    function displayLiveBookings(bookings) {
+        const container = document.getElementById('live-bookings');
+        
+        if (bookings.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-center py-4">No recent bookings</p>';
+            return;
+        }
+        
+        container.innerHTML = '';
+        
+        bookings.forEach(booking => {
+            const bookingDiv = document.createElement('div');
+            bookingDiv.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg border';
+            
+            const timeAgo = formatTimeAgo(new Date(booking.booking_time));
+            
+            bookingDiv.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i data-lucide="user" class="w-5 h-5 text-blue-600"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900">${booking.attendee_name}</p>
+                        <p class="text-sm text-gray-500">${booking.attendee_email}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="font-medium text-gray-900">${booking.currency} ${parseInt(booking.ticket_price).toLocaleString()}</p>
+                    <p class="text-sm text-gray-500">${timeAgo}</p>
+                </div>
+            `;
+            
+            container.appendChild(bookingDiv);
+        });
+        
+        // Re-initialize Lucide icons
+        lucide.createIcons();
+    }
+    
+    function updateLiveStats(data) {
+        // Update revenue card with live data
+        if (data.total_revenue > 0) {
+            document.getElementById('total-revenue').textContent = `INR ${data.total_revenue.toLocaleString()}`;
+        }
+        
+        // Update tickets sold with live data
+        if (data.total_sales > 0) {
+            document.getElementById('tickets-sold').textContent = data.total_sales.toLocaleString();
+        }
+    }
+    
+    function formatTimeAgo(date) {
+        const now = new Date();
+        const diff = now - date;
+        const seconds = Math.floor(diff / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        
+        if (seconds < 60) return 'Just now';
+        if (minutes < 60) return `${minutes}m ago`;
+        if (hours < 24) return `${hours}h ago`;
+        return date.toLocaleDateString();
+    }
+    
+    // Auto-refresh live data every 5 seconds
+    setInterval(loadLiveBookings, 5000);
+    
+    // Booking simulation functions
+    function generateRandomName() {
+        const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+        const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+        return `${firstName} ${lastName}`;
+    }
+    
+    function generateRandomEmail(name) {
+        const domain = domains[Math.floor(Math.random() * domains.length)];
+        const emailName = name.toLowerCase().replace(' ', '.');
+        return `${emailName}@${domain}`;
+    }
+    
+    function getBookingDelay() {
+        const speed = document.getElementById('booking-speed').value;
+        
+        switch(speed) {
+            case 'slow':
+                return { min: 3000, max: 5000 };
+            case 'medium':
+                return { min: 1000, max: 3000 };
+            case 'fast':
+                return { min: 500, max: 1000 };
+            default:
+                return { min: 1000, max: 3000 };
+        }
+    }
+    
+    async function simulateBooking() {
+        const name = generateRandomName();
+        const email = generateRandomEmail(name);
+        
+        // Use the actual event ticket price instead of random price range
+        const ticketPrice = parseInt('{{ event.ticketPrice if event else 25000 }}');
+        
+        // Generate random booking date between today and 1 day before event
+        const eventDate = new Date('{{ event.date if event else "2024-03-15" }}');
+        const today = new Date();
+        const oneDayBeforeEvent = new Date(eventDate.getTime() - 24 * 60 * 60 * 1000);
+        
+        // Random date between today and one day before event
+        const timeDiff = oneDayBeforeEvent.getTime() - today.getTime();
+        const randomTime = Math.random() * timeDiff;
+        const bookingDate = new Date(today.getTime() + randomTime);
+        
+        const bookingData = {
+            event_id: eventId,
+            attendee_name: name,
+            attendee_email: email,
+            ticket_price: ticketPrice,
+            currency: '{{ event.currency if event else "INR" }}',
+            booking_time: bookingDate.toISOString()
+        };
+        
+        try {
+            const response = await fetch('/api/book-ticket', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(bookingData)
+            });
+            
+            if (response.ok) {
+                simulationBookingsCount++;
+                simulationTotalRevenue += ticketPrice;
+                
+                // Store simulation data for export
+                simulationData.push(bookingData);
+                
+                // Update simulation status
+                updateSimulationStatus();
+                
+                // Update charts in real-time
+                updateChartsWithNewData();
+                
+                console.log(`✅ Simulated booking: ${name} - ${bookingData.currency} ${ticketPrice.toLocaleString()} (${bookingDate.toLocaleDateString()})`);
+                
+                return true;
+            }
+        } catch (error) {
+            console.error('Error simulating booking:', error);
+        }
+        
+        return false;
+    }
+    
+    function updateSimulationStatus() {
+        document.getElementById('bookings-generated').textContent = simulationBookingsCount;
+        document.getElementById('revenue-generated').textContent = `{{ event.currency if event else "INR" }} ${simulationTotalRevenue.toLocaleString()}`;
+        
+        // Update progress for non-continuous simulations
+        const mode = document.getElementById('simulation-mode').value;
+        let targetBookings = 0;
+        
+        switch(mode) {
+            case 'quick': targetBookings = 10; break;
+            case 'medium': targetBookings = 25; break;
+            case 'large': targetBookings = 50; break;
+            case 'continuous': targetBookings = -1; break; // No progress for continuous
+        }
+        
+        if (targetBookings > 0) {
+            const progress = (simulationBookingsCount / targetBookings) * 100;
+            document.getElementById('simulation-progress').style.width = `${Math.min(progress, 100)}%`;
+        }
+    }
+    
+    function updateChartsWithNewData() {
+        // Track hourly bookings
+        const currentHour = new Date().getHours();
+        if (!hourlyBookings[currentHour]) {
+            hourlyBookings[currentHour] = 0;
+        }
+        hourlyBookings[currentHour]++;
+        
+        // Update sales chart with new hourly data
+        if (salesChart) {
+            const now = new Date();
+            const hours = [];
+            const bookingCounts = [];
+            
+            // Rebuild data for last 12 hours
+            for (let i = 11; i >= 0; i--) {
+                const hour = new Date(now.getTime() - i * 60 * 60 * 1000);
+                const hourKey = hour.getHours();
+                const hourLabel = hour.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: false 
+                });
+                
+                hours.push(hourLabel);
+                bookingCounts.push(hourlyBookings[hourKey] || 0);
+            }
+            
+            // Update chart data
+            salesChart.data.labels = hours;
+            salesChart.data.datasets[0].data = bookingCounts;
+            salesChart.update('active');
+        }
+        
+        // Update revenue chart with cumulative data
+        if (revenueChart) {
+            const timeLabel = new Date().toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            // Add new data point for cumulative revenue
+            revenueChart.data.labels.push(timeLabel);
+            revenueChart.data.datasets[0].data.push(simulationTotalRevenue);
+            
+            // Keep only last 15 data points for clarity
+            if (revenueChart.data.labels.length > 15) {
+                revenueChart.data.labels.shift();
+                revenueChart.data.datasets[0].data.shift();
+            }
+            
+            revenueChart.update('active');
+        }
+    }
+    
+    async function startBookingSimulation() {
+        const mode = document.getElementById('simulation-mode').value;
+        const delay = getBookingDelay();
+        
+        // Reset simulation data
+        simulationBookingsCount = 0;
+        simulationTotalRevenue = 0;
+        simulationData = [];
+        
+        // Update UI
+        document.getElementById('start-simulation').disabled = true;
+        document.getElementById('stop-simulation').disabled = false;
+        document.getElementById('simulation-status').textContent = 'Running';
+        document.getElementById('simulation-status').className = 'px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full';
+        document.getElementById('simulation-progress').style.width = '0%';
+        
+        let targetBookings = 0;
+        let duration = 0;
+        
+        // Set targets based on mode
+        switch(mode) {
+            case 'quick':
+                targetBookings = 10;
+                break;
+            case 'medium':
+                targetBookings = 25;
+                break;
+            case 'large':
+                targetBookings = 50;
+                break;
+            case 'continuous':
+                duration = 5 * 60 * 1000; // 5 minutes
+                break;
+        }
+        
+        console.log(`🚀 Starting ${mode} simulation...`);
+        
+        const startTime = Date.now();
+        
+        simulationInterval = setInterval(async () => {
+            // Check if we should stop
+            if (targetBookings > 0 && simulationBookingsCount >= targetBookings) {
+                stopBookingSimulation();
+                return;
+            }
+            
+            if (duration > 0 && Date.now() - startTime >= duration) {
+                stopBookingSimulation();
+                return;
+            }
+            
+            // Generate a booking
+            await simulateBooking();
+            
+        }, Math.random() * (delay.max - delay.min) + delay.min);
+    }
+    
+    function stopBookingSimulation() {
+        if (simulationInterval) {
+            clearInterval(simulationInterval);
+            simulationInterval = null;
+        }
+        
+        // Update UI
+        document.getElementById('start-simulation').disabled = false;
+        document.getElementById('stop-simulation').disabled = true;
+        document.getElementById('simulation-status').textContent = 'Stopped';
+        document.getElementById('simulation-status').className = 'px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full';
+        
+        console.log(`⏹️ Simulation stopped. Generated ${simulationBookingsCount} bookings, {{ event.currency if event else "INR" }} ${simulationTotalRevenue.toLocaleString()} revenue`);
+    }
+    
+    function exportSimulationData() {
+        if (simulationData.length === 0) {
+            alert('No simulation data to export. Run a simulation first.');
+            return;
+        }
+        
+        // Create CSV content
+        const headers = ['Booking ID', 'Event ID', 'Attendee Name', 'Email', 'Ticket Price', 'Currency', 'Booking Time'];
+        const csvContent = [
+            headers.join(','),
+            ...simulationData.map((booking, index) => [
+                index + 1,
+                booking.event_id,
+                `"${booking.attendee_name}"`,
+                booking.attendee_email,
+                booking.ticket_price,
+                booking.currency,
+                booking.booking_time
+            ].join(','))
+        ].join('\n');
+        
+        // Download CSV
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `simulation_data_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        alert(`Exported ${simulationData.length} simulation bookings to CSV!`);
+    }
+    
+    // Load data when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        loadEventData();
+        loadLiveBookings();
+        checkEventStatus();
+    });
+    
+    // Go Live functionality
+    async function goLive() {
+        try {
+            const response = await fetch(`/api/events/${eventId}/go-live`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Update button to show event is live
+                const btn = document.getElementById('go-live-btn');
+                btn.innerHTML = `
+                    <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    <span>EVENT LIVE</span>
+                    <i data-lucide="radio" class="w-4 h-4"></i>
+                `;
+                btn.disabled = true;
+                btn.className = 'flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium cursor-not-allowed';
+                
+                // Show success message
+                alert('🔴 Event is now LIVE! Engagement analytics are now active.');
+                
+                // Optionally redirect to engagement page
+                setTimeout(() => {
+                    window.location.href = `/events/${eventId}/engagement`;
+                }, 2000);
+            } else {
+                alert('Failed to start live event. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error starting live event:', error);
+            alert('Error starting live event. Please try again.');
+        }
+    }
+    
+    // Check if event is already live
+    async function checkEventStatus() {
+        try {
+            const response = await fetch(`/api/events/${eventId}/status`);
+            const data = await response.json();
+            
+            if (data.status === 'live') {
+                // Update button to show event is already live
+                const btn = document.getElementById('go-live-btn');
+                btn.innerHTML = `
+                    <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    <span>EVENT LIVE</span>
+                    <i data-lucide="radio" class="w-4 h-4"></i>
+                `;
+                btn.disabled = true;
+                btn.className = 'flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium cursor-not-allowed';
+            }
+        } catch (error) {
+            console.error('Error checking event status:', error);
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block title %}Live Engagement - EventPro{% endblock %}
+
+{% block page_title %}Live Event Engagement{% endblock %}
+
+{% block content %}
+<!-- Live Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Live Attendance</p>
+                <p class="text-3xl font-bold text-gray-900 mt-1" id="live-attendance">240</p>
+                <p class="text-green-600 text-sm mt-1">🔴 Live now</p>
+            </div>
+            <div class="p-3 rounded-lg bg-green-50">
+                <i data-lucide="users" class="w-6 h-6 text-green-600"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Active Polls</p>
+                <p class="text-3xl font-bold text-gray-900 mt-1" id="active-polls">3</p>
+                <p class="text-blue-600 text-sm mt-1">Running now</p>
+            </div>
+            <div class="p-3 rounded-lg bg-blue-50">
+                <i data-lucide="bar-chart-3" class="w-6 h-6 text-blue-600"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Q&A Questions</p>
+                <p class="text-3xl font-bold text-gray-900 mt-1" id="qa-questions">47</p>
+                <p class="text-purple-600 text-sm mt-1">+12 in last hour</p>
+            </div>
+            <div class="p-3 rounded-lg bg-purple-50">
+                <i data-lucide="message-square" class="w-6 h-6 text-purple-600"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Engagement Breakdown -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-6">Engagement Breakdown</h3>
+        <div class="flex items-center justify-center">
+            <canvas id="engagementChart" width="250" height="250"></canvas>
+        </div>
+        <div class="flex flex-col space-y-2 mt-4" id="engagement-legend">
+            <!-- Legend will be populated here -->
+        </div>
+    </div>
+
+    <!-- Live Attendance -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-6">Live Attendance Trend</h3>
+        <canvas id="attendanceChart" width="400" height="250"></canvas>
+    </div>
+</div>
+
+<!-- Poll Management & Top Activities -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Poll Management -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-semibold text-gray-900">Poll Management</h3>
+        </div>
+        
+        <!-- Add New Poll -->
+        <div class="mb-6">
+            <div class="flex space-x-2">
+                <input
+                    type="text"
+                    id="new-poll-question"
+                    placeholder="Enter poll question..."
+                    class="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                    onclick="addPoll()"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
+                >
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Active Polls -->
+        <div class="space-y-3" id="polls-list">
+            <!-- Polls will be populated here -->
+        </div>
+    </div>
+
+    <!-- Most Engaged Activities -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-6">Most Engaged Activities</h3>
+        <div class="space-y-4" id="top-activities">
+            <!-- Activities will be populated here -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let engagementChart, attendanceChart;
+    let polls = [];
+    
+    // Load engagement data
+    async function loadEngagementData() {
+        try {
+            const response = await fetch('/api/analytics/engagement');
+            const data = await response.json();
+            
+            // Update live stats
+            document.getElementById('live-attendance').textContent = data.live_attendance;
+            document.getElementById('active-polls').textContent = data.active_polls;
+            document.getElementById('qa-questions').textContent = data.qa_questions;
+            
+            // Create charts
+            createEngagementChart(data.breakdown);
+            createAttendanceChart();
+            
+            // Load polls
+            loadPolls();
+            loadTopActivities();
+            
+        } catch (error) {
+            console.error('Error loading engagement data:', error);
+        }
+    }
+    
+    function createEngagementChart(data) {
+        const ctx = document.getElementById('engagementChart').getContext('2d');
+        const colors = ['#3b82f6', '#10b981', '#f59e0b'];
+        
+        engagementChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: data.map(d => d.name),
+                datasets: [{
+                    data: data.map(d => d.value),
+                    backgroundColor: colors,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // Create custom legend
+        const legend = document.getElementById('engagement-legend');
+        legend.innerHTML = '';
+        data.forEach((item, index) => {
+            const legendItem = document.createElement('div');
+            legendItem.className = 'flex items-center justify-between';
+            legendItem.innerHTML = `
+                <div class="flex items-center">
+                    <div class="w-3 h-3 rounded-full mr-2" style="background-color: ${colors[index]}"></div>
+                    <span class="text-sm text-gray-600">${item.name}</span>
+                </div>
+                <span class="text-sm font-medium text-gray-900">${item.value}%</span>
+            `;
+            legend.appendChild(legendItem);
+        });
+    }
+    
+    function createAttendanceChart() {
+        const ctx = document.getElementById('attendanceChart').getContext('2d');
+        const attendanceData = [
+            {time: '10:00', attendees: 150},
+            {time: '10:30', attendees: 180},
+            {time: '11:00', attendees: 220},
+            {time: '11:30', attendees: 240},
+            {time: '12:00', attendees: 210},
+            {time: '12:30', attendees: 185}
+        ];
+        
+        attendanceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: attendanceData.map(d => d.time),
+                datasets: [{
+                    label: 'Attendees',
+                    data: attendanceData.map(d => d.attendees),
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+    
+    async function loadPolls() {
+        try {
+            const response = await fetch('/api/polls');
+            const data = await response.json();
+            polls = data.polls || [];
+            
+            displayPolls();
+        } catch (error) {
+            console.error('Error loading polls:', error);
+        }
+    }
+    
+    function displayPolls() {
+        const pollsList = document.getElementById('polls-list');
+        pollsList.innerHTML = '';
+        
+        polls.forEach(poll => {
+            const pollDiv = document.createElement('div');
+            pollDiv.className = 'flex items-center justify-between p-3 border border-gray-100 rounded-lg';
+            pollDiv.innerHTML = `
+                <div class="flex-1">
+                    <p class="font-medium text-gray-900">${poll.question}</p>
+                    <p class="text-sm text-gray-500">${poll.responses} responses</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="px-2 py-1 rounded-full text-xs font-medium ${poll.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                        ${poll.active ? 'Active' : 'Closed'}
+                    </span>
+                    <button class="p-1 text-gray-400 hover:text-gray-600">
+                        <i data-lucide="edit" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="deletePoll(${poll.id})" class="p-1 text-gray-400 hover:text-red-600">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `;
+            pollsList.appendChild(pollDiv);
+        });
+        
+        // Re-initialize Lucide icons
+        lucide.createIcons();
+    }
+    
+    async function addPoll() {
+        const question = document.getElementById('new-poll-question').value.trim();
+        if (!question) return;
+        
+        try {
+            const response = await fetch('/api/polls', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ question })
+            });
+            
+            if (response.ok) {
+                const newPoll = {
+                    id: Date.now(),
+                    question: question,
+                    responses: 0,
+                    active: true
+                };
+                polls.push(newPoll);
+                displayPolls();
+                document.getElementById('new-poll-question').value = '';
+            }
+        } catch (error) {
+            console.error('Error adding poll:', error);
+        }
+    }
+    
+    function deletePoll(id) {
+        polls = polls.filter(poll => poll.id !== id);
+        displayPolls();
+    }
+    
+    function loadTopActivities() {
+        const activities = [
+            { name: 'Tech Panel Discussion', participants: 156, engagement: '85%' },
+            { name: 'Networking Break', participants: 134, engagement: '72%' },
+            { name: 'Keynote Q&A', participants: 128, engagement: '68%' },
+            { name: 'Workshop Session', participants: 98, engagement: '54%' }
+        ];
+        
+        const activitiesDiv = document.getElementById('top-activities');
+        activitiesDiv.innerHTML = '';
+        
+        activities.forEach((activity, index) => {
+            const activityDiv = document.createElement('div');
+            activityDiv.className = 'flex items-center justify-between p-3 border border-gray-100 rounded-lg';
+            activityDiv.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <span class="text-sm font-bold text-blue-600">${index + 1}</span>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900">${activity.name}</p>
+                        <p class="text-sm text-gray-500">${activity.participants} participants</p>
+                    </div>
+                </div>
+                <span class="text-sm font-medium text-green-600">${activity.engagement}</span>
+            `;
+            activitiesDiv.appendChild(activityDiv);
+        });
+    }
+    
+    // Auto-refresh live data every 30 seconds
+    setInterval(async () => {
+        try {
+            const response = await fetch('/api/live-updates');
+            const data = await response.json();
+            
+            document.getElementById('live-attendance').textContent = data.attendance;
+            document.getElementById('qa-questions').textContent = data.qa_questions;
+        } catch (error) {
+            console.error('Error updating live data:', error);
+        }
+    }, 30000);
+    
+    // Load data when page loads
+    document.addEventListener('DOMContentLoaded', loadEngagementData);
+</script>
+{% endblock %}

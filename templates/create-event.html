@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+
+{% block title %}Create Event - EventPro{% endblock %}
+
+{% block page_title %}Create New Event{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <form id="event-form" class="space-y-8">
+        <!-- Basic Information -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">Basic Information</h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="lg:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Event Title</label>
+                    <input
+                        type="text"
+                        name="title"
+                        id="title"
+                        placeholder="Enter event title"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    />
+                </div>
+
+                <div class="lg:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea
+                        name="description"
+                        id="description"
+                        rows="4"
+                        placeholder="Describe your event"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    ></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                    <select
+                        name="category"
+                        id="category"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    >
+                        <option value="">Select category</option>
+                        <option value="technology">Technology</option>
+                        <option value="business">Business</option>
+                        <option value="marketing">Marketing</option>
+                        <option value="design">Design</option>
+                        <option value="education">Education</option>
+                        <option value="networking">Networking</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Event Image</label>
+                    <div class="flex items-center space-x-4">
+                        <input
+                            type="file"
+                            id="image-upload"
+                            accept="image/*"
+                            class="hidden"
+                        />
+                        <label
+                            for="image-upload"
+                            class="flex items-center space-x-2 px-4 py-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
+                        >
+                            <i data-lucide="image" class="w-4 h-4 text-gray-400"></i>
+                            <span class="text-sm text-gray-600">Upload Image</span>
+                        </label>
+                        <span id="image-name" class="text-sm text-green-600"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Date & Location -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">Date & Location</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i data-lucide="calendar" class="w-4 h-4 inline mr-2"></i>
+                        Event Date
+                    </label>
+                    <input
+                        type="date"
+                        name="date"
+                        id="date"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i data-lucide="clock" class="w-4 h-4 inline mr-2"></i>
+                        Start Time
+                    </label>
+                    <input
+                        type="time"
+                        name="time"
+                        id="time"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    />
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i data-lucide="map-pin" class="w-4 h-4 inline mr-2"></i>
+                        Location
+                    </label>
+                    <input
+                        type="text"
+                        name="location"
+                        id="location"
+                        placeholder="Enter venue address or online platform"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    />
+                </div>
+            </div>
+        </div>
+
+        <!-- Ticket Information -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">Ticket Information</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i data-lucide="image" class="w-4 h-4 inline mr-2"></i>
+                        Event Banner Image
+                    </label>
+                    <input
+                        type="file"
+                        name="image"
+                        id="image"
+                        accept="image/*"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p class="text-xs text-gray-500 mt-1">Upload an image for the event banner (JPG, PNG, GIF)</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i data-lucide="users" class="w-4 h-4 inline mr-2"></i>
+                        Capacity
+                    </label>
+                    <input
+                        type="number"
+                        name="capacity"
+                        id="capacity"
+                        placeholder="Maximum attendees"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i data-lucide="dollar-sign" class="w-4 h-4 inline mr-2"></i>
+                        Ticket Price
+                    </label>
+                    <div class="flex space-x-2">
+                        <select
+                            name="currency"
+                            id="currency"
+                            class="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-24"
+                            required
+                        >
+                            <option value="INR">INR</option>
+                            <option value="USD">USD</option>
+                            <option value="EUR">EUR</option>
+                            <option value="GBP">GBP</option>
+                        </select>
+                        <input
+                            type="number"
+                            name="ticketPrice"
+                            id="ticketPrice"
+                            placeholder="0 for free events"
+                            class="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                        />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Event Preview -->
+        <div id="event-preview" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hidden">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">Event Preview</h3>
+            
+            <div class="border border-gray-200 rounded-lg p-6">
+                <div class="flex items-start space-x-4">
+                    <div class="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <i data-lucide="image" class="w-8 h-8 text-gray-400"></i>
+                    </div>
+                    
+                    <div class="flex-1">
+                        <h4 id="preview-title" class="text-xl font-bold text-gray-900 mb-2"></h4>
+                        <p id="preview-description" class="text-gray-600 mb-3"></p>
+                        
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div class="flex items-center text-gray-600">
+                                <i data-lucide="calendar" class="w-4 h-4 mr-2"></i>
+                                <span id="preview-datetime"></span>
+                            </div>
+                            <div class="flex items-center text-gray-600">
+                                <i data-lucide="map-pin" class="w-4 h-4 mr-2"></i>
+                                <span id="preview-location"></span>
+                            </div>
+                            <div class="flex items-center text-gray-600">
+                                <i data-lucide="users" class="w-4 h-4 mr-2"></i>
+                                <span id="preview-capacity"></span>
+                            </div>
+                            <div class="flex items-center text-gray-600">
+                                <i data-lucide="dollar-sign" class="w-4 h-4 mr-2"></i>
+                                <span id="preview-price"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="flex justify-end space-x-4">
+            <button
+                type="button"
+                class="px-6 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50"
+            >
+                Save as Draft
+            </button>
+            <button
+                type="submit"
+                class="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+                <i data-lucide="save" class="w-4 h-4"></i>
+                <span>Create Event</span>
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const form = document.getElementById('event-form');
+    const previewDiv = document.getElementById('event-preview');
+    
+    // Update preview when form changes
+    function updatePreview() {
+        const title = document.getElementById('title').value;
+        const description = document.getElementById('description').value;
+        const date = document.getElementById('date').value;
+        const time = document.getElementById('time').value;
+        const location = document.getElementById('location').value;
+        const capacity = document.getElementById('capacity').value;
+        const ticketPrice = document.getElementById('ticketPrice').value;
+        const currency = document.getElementById('currency').value;
+        const imageFile = document.getElementById('image').files[0];
+        
+        if (title) {
+            previewDiv.classList.remove('hidden');
+            
+            document.getElementById('preview-title').textContent = title;
+            document.getElementById('preview-description').textContent = description;
+            document.getElementById('preview-datetime').textContent = `${date} at ${time}`;
+            document.getElementById('preview-location').textContent = location;
+            document.getElementById('preview-capacity').textContent = `Max ${capacity} attendees`;
+            document.getElementById('preview-price').textContent = ticketPrice == 0 ? 'Free' : `${currency} ${parseInt(ticketPrice || 0).toLocaleString()}`;
+            
+            // Update preview image
+            const previewImage = document.getElementById('preview-image');
+            const previewPlaceholder = document.getElementById('preview-placeholder');
+            
+            if (imageFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = 'block';
+                    previewPlaceholder.style.display = 'none';
+                };
+                reader.readAsDataURL(imageFile);
+            } else {
+                previewImage.style.display = 'none';
+                previewPlaceholder.style.display = 'flex';
+            }
+        } else {
+            previewDiv.classList.add('hidden');
+        }
+    }
+    
+    // Handle image upload
+    document.getElementById('image-upload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            document.getElementById('image-name').textContent = file.name;
+        }
+    });
+    
+    // Add event listeners to form fields
+    form.addEventListener('input', updatePreview);
+    
+    // Handle form submission
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        const eventData = {
+            title: formData.get('title'),
+            description: formData.get('description'),
+            date: formData.get('date'),
+            time: formData.get('time'),
+            location: formData.get('location'),
+            capacity: parseInt(formData.get('capacity')),
+            ticketPrice: parseInt(formData.get('ticketPrice')),
+            currency: formData.get('currency'),
+            image: formData.get('image') || '/static/images/default-event.jpg'
+        };
+        
+        try {
+            const response = await fetch('/api/create-event', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(eventData)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('Event created successfully!');
+                window.location.href = '/events';
+            } else {
+                alert('Error creating event: ' + (result.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error creating event. Please try again.');
+        }
+    });
+</script>
+{% endblock %}

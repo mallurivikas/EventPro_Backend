@@ -1,0 +1,1826 @@
+{% extends "event_base.html" %}
+
+{% block title %}Event Engagement - {{ event_title }}{% endblock %}
+
+{% block page_title %}
+<div class="flex items-center justify-between">
+    <span>Event Engagement</span>
+    <button 
+        id="end-event-btn" 
+        onclick="endEvent()" 
+        class="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+    >
+        <i data-lucide="square" class="w-4 h-4"></i>
+        <span>END EVENT</span>
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Event Status Check -->
+<div id="not-live-message" class="hidden">
+    <div class="flex items-center justify-center min-h-96">
+        <div class="text-center">
+            <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i data-lucide="calendar-clock" class="w-12 h-12 text-gray-400"></i>
+            </div>
+            <h2 class="text-2xl font-semibold text-gray-900 mb-2">NO INFO YET</h2>
+            <p class="text-gray-600 mb-6">This event is not live yet. Start the event from Pre-Event Analytics to see engagement data.</p>
+            <a href="/events/{{ event_id }}/pre-event" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
+                Go to Pre-Event Analytics
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Live Content (hidden by default) -->
+<div id="live-content" class="hidden">
+<!-- Live Stats -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Live Attendance</p>
+                <p class="text-3xl font-bold text-gray-900 mt-1" id="live-attendance">0</p>
+                <p class="text-green-600 text-sm mt-1">🔴 Live now</p>
+            </div>
+            <div class="p-3 rounded-lg bg-green-50">
+                <i data-lucide="users" class="w-6 h-6 text-green-600"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Active Polls</p>
+                <p class="text-3xl font-bold text-gray-900 mt-1" id="active-polls">0</p>
+                <p class="text-blue-600 text-sm mt-1">Running now</p>
+            </div>
+            <div class="p-3 rounded-lg bg-blue-50">
+                <i data-lucide="bar-chart-3" class="w-6 h-6 text-blue-600"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Q&A Questions</p>
+                <p class="text-3xl font-bold text-gray-900 mt-1" id="qa-questions">0</p>
+                <p class="text-purple-600 text-sm mt-1">Received</p>
+            </div>
+            <div class="p-3 rounded-lg bg-purple-50">
+                <i data-lucide="message-square" class="w-6 h-6 text-purple-600"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Engagement Rate</p>
+                <p class="text-3xl font-bold text-gray-900 mt-1" id="engagement-rate">0%</p>
+                <p class="text-orange-600 text-sm mt-1">Average</p>
+            </div>
+            <div class="p-3 rounded-lg bg-orange-50">
+                <i data-lucide="activity" class="w-6 h-6 text-orange-600"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- No Events Message (shown initially) -->
+<div id="no-events-message">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mb-8">
+        <div class="text-center">
+            <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i data-lucide="calendar-plus" class="w-12 h-12 text-gray-400"></i>
+            </div>
+            <h2 class="text-2xl font-semibold text-gray-900 mb-2">NO EVENTS YET</h2>
+            <p class="text-gray-600 mb-8">Create your first poll or Q&A session to start engaging with your audience.</p>
+            
+            <!-- Quick Actions -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-md mx-auto">
+                <button 
+                    onclick="showCreatePollForm()" 
+                    class="flex items-center justify-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                    <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+                    <span>Create Poll</span>
+                </button>
+                <button 
+                    onclick="showCreateQAForm()" 
+                    class="flex items-center justify-center space-x-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                    <i data-lucide="message-square" class="w-5 h-5"></i>
+                    <span>Start Q&A</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Poll Form (hidden initially) -->
+<div id="create-poll-form" class="hidden bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+    <div class="flex items-center justify-between mb-6">
+        <h3 class="text-lg font-semibold text-gray-900">Create Your First Poll</h3>
+        <button onclick="hideCreateForms()" class="text-gray-400 hover:text-gray-600">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Custom Poll -->
+        <div class="space-y-4">
+            <h4 class="font-medium text-gray-900">Custom Poll</h4>
+            <div class="space-y-3">
+                <input
+                    type="text"
+                    id="initial-poll-question"
+                    placeholder="Enter poll question..."
+                    class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <div class="grid grid-cols-2 gap-2">
+                    <input
+                        type="text"
+                        id="initial-poll-option1"
+                        placeholder="Option 1"
+                        class="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                        type="text"
+                        id="initial-poll-option2"
+                        placeholder="Option 2"
+                        class="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                        type="text"
+                        id="initial-poll-option3"
+                        placeholder="Option 3 (optional)"
+                        class="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                        type="text"
+                        id="initial-poll-option4"
+                        placeholder="Option 4 (optional)"
+                        class="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+                <button
+                    onclick="createInitialPoll()"
+                    class="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>Create Poll</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick Templates -->
+        <div class="space-y-4">
+            <h4 class="font-medium text-gray-900">Quick Templates</h4>
+            <div class="space-y-2">
+                <button onclick="createQuickPoll('satisfaction')" class="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div class="font-medium text-gray-900">📊 Event Satisfaction</div>
+                    <div class="text-sm text-gray-500">Rate 1-5 scale</div>
+                </button>
+                <button onclick="createQuickPoll('recommendation')" class="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div class="font-medium text-gray-900">👍 Recommendation</div>
+                    <div class="text-sm text-gray-500">Would you recommend?</div>
+                </button>
+                <button onclick="createQuickPoll('session')" class="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div class="font-medium text-gray-900">🎯 Session Value</div>
+                    <div class="text-sm text-gray-500">Most valuable session</div>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Q&A Form (hidden initially) -->
+<div id="create-qa-form" class="hidden bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+    <div class="flex items-center justify-between mb-6">
+        <h3 class="text-lg font-semibold text-gray-900">Start Q&A Session</h3>
+        <button onclick="hideCreateForms()" class="text-gray-400 hover:text-gray-600">
+            <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Q&A Setup -->
+        <div class="space-y-4">
+            <h4 class="font-medium text-gray-900">Q&A Session Setup</h4>
+            <div class="space-y-3">
+                <div class="p-4 bg-blue-50 rounded-lg">
+                    <div class="flex items-center space-x-2 mb-2">
+                        <i data-lucide="info" class="w-4 h-4 text-blue-600"></i>
+                        <span class="text-sm font-medium text-blue-900">Q&A Session Info</span>
+                    </div>
+                    <p class="text-sm text-blue-700">Attendees can submit questions in real-time. You can moderate and answer them during the event.</p>
+                </div>
+                
+                <input
+                    type="text"
+                    id="initial-qa-question"
+                    placeholder="Add a sample question to get started..."
+                    class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                
+                <button
+                    onclick="startInitialQA()"
+                    class="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                >
+                    <i data-lucide="mic" class="w-4 h-4"></i>
+                    <span>Start Q&A Session</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Sample Questions -->
+        <div class="space-y-4">
+            <h4 class="font-medium text-gray-900">Sample Questions</h4>
+            <div class="space-y-2">
+                <button onclick="addQuickQuestion('What are the key takeaways from this session?')" class="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div class="text-sm text-gray-900">What are the key takeaways from this session?</div>
+                </button>
+                <button onclick="addQuickQuestion('How can we implement these strategies?')" class="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div class="text-sm text-gray-900">How can we implement these strategies?</div>
+                </button>
+                <button onclick="addQuickQuestion('What tools do you recommend?')" class="w-full text-left px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div class="text-sm text-gray-900">What tools do you recommend?</div>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content (hidden until events are created) -->
+<div id="main-content" class="hidden">
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Engagement Breakdown -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">Engagement Breakdown</h3>
+            <div class="flex items-center justify-center h-64">
+                <canvas id="engagementChart"></canvas>
+            </div>
+            <div class="flex flex-col space-y-2 mt-4" id="engagement-legend">
+                <!-- Legend will be populated here -->
+            </div>
+        </div>
+
+        <!-- Live Attendance -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-6">Live Attendance Trend</h3>
+            <div class="h-64">
+                <canvas id="attendanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+<!-- Host Controls Section -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+    <h3 class="text-lg font-semibold text-gray-900 mb-6">Host Controls & Automation</h3>
+    
+    <!-- Control Tabs -->
+    <div class="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+        <button onclick="switchTab('polls')" id="polls-tab" class="flex-1 px-4 py-2 text-sm font-medium rounded-md bg-white text-blue-600 shadow-sm">
+            Polls Management
+        </button>
+        <button onclick="switchTab('qna')" id="qna-tab" class="flex-1 px-4 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700">
+            Q&A Management
+        </button>
+        <button onclick="switchTab('simulator')" id="simulator-tab" class="flex-1 px-4 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700">
+            Activity Simulator
+        </button>
+        <button onclick="switchTab('export')" id="export-tab" class="flex-1 px-4 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700">
+            Export Data
+        </button>
+    </div>
+
+    <!-- Polls Management Tab -->
+    <div id="polls-content" class="tab-content">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Create New Poll -->
+            <div class="space-y-4">
+                <h4 class="font-medium text-gray-900">Create New Poll</h4>
+                <div class="space-y-3">
+                    <input
+                        type="text"
+                        id="poll-question"
+                        placeholder="Enter poll question..."
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <div class="grid grid-cols-2 gap-2">
+                        <input
+                            type="text"
+                            id="poll-option1"
+                            placeholder="Option 1"
+                            class="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <input
+                            type="text"
+                            id="poll-option2"
+                            placeholder="Option 2"
+                            class="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <input
+                            type="text"
+                            id="poll-option3"
+                            placeholder="Option 3 (optional)"
+                            class="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <input
+                            type="text"
+                            id="poll-option4"
+                            placeholder="Option 4 (optional)"
+                            class="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    <button
+                        onclick="createPoll()"
+                        class="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        <span>Create Poll</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Poll Templates -->
+            <div class="space-y-4">
+                <h4 class="font-medium text-gray-900">Quick Poll Templates</h4>
+                <div class="space-y-2">
+                    <button onclick="createQuickPoll('satisfaction')" class="w-full text-left px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+                        📊 Event Satisfaction (1-5 scale)
+                    </button>
+                    <button onclick="createQuickPoll('recommendation')" class="w-full text-left px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+                        👍 Would you recommend this event?
+                    </button>
+                    <button onclick="createQuickPoll('session')" class="w-full text-left px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+                        🎯 Which session was most valuable?
+                    </button>
+                    <button onclick="createQuickPoll('networking')" class="w-full text-left px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">
+                        🤝 How was the networking opportunity?
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Q&A Management Tab -->
+    <div id="qna-content" class="tab-content hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Q&A Controls -->
+            <div class="space-y-4">
+                <h4 class="font-medium text-gray-900">Q&A Session Controls</h4>
+                <div class="space-y-3">
+                    <div class="flex space-x-2">
+                        <button onclick="toggleQASession()" id="qa-toggle-btn" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                            <i data-lucide="mic" class="w-4 h-4 inline mr-2"></i>
+                            Open Q&A Session
+                        </button>
+                        <button onclick="clearAllQuestions()" class="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Add Sample Question -->
+                    <div class="space-y-2">
+                        <input
+                            type="text"
+                            id="sample-question"
+                            placeholder="Add a sample question..."
+                            class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button
+                            onclick="addSampleQuestion()"
+                            class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                        >
+                            Add Sample Question
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Q&A Stats -->
+            <div class="space-y-4">
+                <h4 class="font-medium text-gray-900">Q&A Statistics</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-center p-3 bg-blue-50 rounded-lg">
+                        <div class="text-2xl font-bold text-blue-600" id="total-questions">0</div>
+                        <div class="text-sm text-gray-600">Total Questions</div>
+                    </div>
+                    <div class="text-center p-3 bg-green-50 rounded-lg">
+                        <div class="text-2xl font-bold text-green-600" id="answered-questions">0</div>
+                        <div class="text-sm text-gray-600">Answered</div>
+                    </div>
+                    <div class="text-center p-3 bg-yellow-50 rounded-lg">
+                        <div class="text-2xl font-bold text-yellow-600" id="pending-questions">0</div>
+                        <div class="text-sm text-gray-600">Pending</div>
+                    </div>
+                    <div class="text-center p-3 bg-purple-50 rounded-lg">
+                        <div class="text-2xl font-bold text-purple-600" id="avg-votes">0</div>
+                        <div class="text-sm text-gray-600">Avg Votes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Simulator Tab -->
+    <div id="simulator-content" class="tab-content hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Simulator Controls -->
+            <div class="space-y-4">
+                <h4 class="font-medium text-gray-900">Activity Simulator</h4>
+                <div class="space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Activity Type</label>
+                            <select id="sim-activity-type" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="polls">Poll Responses</option>
+                                <option value="qna">Q&A Questions</option>
+                                <option value="mixed">Mixed Activity</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Intensity</label>
+                            <select id="sim-intensity" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="low">Low (1-2 per minute)</option>
+                                <option value="medium" selected>Medium (3-5 per minute)</option>
+                                <option value="high">High (6-10 per minute)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
+                        <input
+                            type="number"
+                            id="sim-duration"
+                            value="5"
+                            min="1"
+                            max="60"
+                            class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    
+                    <div class="flex space-x-2">
+                        <button
+                            onclick="startActivitySimulator()"
+                            id="start-sim-btn"
+                            class="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                        >
+                            <i data-lucide="play" class="w-4 h-4 inline mr-2"></i>
+                            Start Simulator
+                        </button>
+                        <button
+                            onclick="stopActivitySimulator()"
+                            id="stop-sim-btn"
+                            class="px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                            disabled
+                        >
+                            <i data-lucide="stop-circle" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simulator Status -->
+            <div class="space-y-4">
+                <h4 class="font-medium text-gray-900">Simulator Status</h4>
+                <div class="space-y-3">
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-gray-600">Status</span>
+                            <span id="sim-status" class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Idle</span>
+                        </div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-gray-600">Activities Generated</span>
+                            <span id="sim-activities-count" class="font-bold text-gray-900">0</span>
+                        </div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm font-medium text-gray-600">Time Remaining</span>
+                            <span id="sim-time-remaining" class="font-bold text-blue-600">--:--</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="sim-progress" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Activity Log -->
+                    <div>
+                        <h5 class="text-sm font-medium text-gray-700 mb-2">Recent Activity</h5>
+                        <div class="max-h-32 overflow-y-auto space-y-1" id="sim-activity-log">
+                            <p class="text-sm text-gray-500">No activity yet...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Data Tab -->
+    <div id="export-content" class="tab-content hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Single Export Option -->
+            <div class="space-y-4">
+                <h4 class="font-medium text-gray-900">Export All Engagement Data</h4>
+                <div class="p-4 bg-blue-50 rounded-lg mb-4">
+                    <div class="flex items-center space-x-2 mb-2">
+                        <i data-lucide="info" class="w-4 h-4 text-blue-600"></i>
+                        <span class="text-sm font-medium text-blue-900">Export Information</span>
+                    </div>
+                    <p class="text-sm text-blue-700">Export all poll results, Q&A questions, and engagement summary in a single CSV file.</p>
+                </div>
+                
+                <button onclick="exportAllDataAsCSV()" class="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span>Export All Data as CSV</span>
+                </button>
+            </div>
+
+            <!-- Export Statistics -->
+            <div class="space-y-4">
+                <h4 class="font-medium text-gray-900">Data Summary</h4>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                        <span class="text-sm font-medium text-gray-700">Total Polls Created</span>
+                        <span class="font-bold text-blue-600" id="export-polls-count">0</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                        <span class="text-sm font-medium text-gray-700">Total Poll Responses</span>
+                        <span class="font-bold text-purple-600" id="export-poll-responses">0</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                        <span class="text-sm font-medium text-gray-700">Total Q&A Questions</span>
+                        <span class="font-bold text-green-600" id="export-qna-count">0</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                        <span class="text-sm font-medium text-gray-700">Live Attendance</span>
+                        <span class="font-bold text-orange-600" id="export-attendance">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Poll Management & Activities -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Poll Management -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-semibold text-gray-900">Poll Management</h3>
+        </div>
+        
+        <!-- Add New Poll -->
+        <div class="mb-6">
+            <div class="flex space-x-2">
+                <input
+                    type="text"
+                    id="new-poll-question"
+                    placeholder="Enter poll question..."
+                    class="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                    onclick="addPoll()"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
+                >
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Active Polls -->
+        <div class="space-y-3" id="polls-list">
+            <!-- Polls will be populated here -->
+        </div>
+    </div>
+
+    <!-- Q&A Management -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-6">Q&A Questions</h3>
+        <div class="space-y-4 max-h-80 overflow-y-auto" id="qa-list">
+            <!-- Q&A questions will be populated here -->
+        </div>
+    </div>
+</div>
+<!-- End of Live Content -->
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let engagementChart, attendanceChart;
+    let polls = [];
+    let qaQuestions = [];
+    const eventId = "{{ event_id }}";
+    
+    // Check event status on page load
+    async function checkEventStatus() {
+        try {
+            const response = await fetch(`/api/events/${eventId}/status`);
+            const data = await response.json();
+            
+            if (data.status === 'live' || data.status === 'completed') {
+                // Show live content for both live and completed events
+                document.getElementById('not-live-message').classList.add('hidden');
+                document.getElementById('live-content').classList.remove('hidden');
+                
+                // Load engagement data regardless of status
+                loadEngagementData();
+                
+                // If event is completed, disable some controls
+                if (data.status === 'completed') {
+                    disableControlsForCompletedEvent();
+                }
+            } else {
+                // Show not live message
+                document.getElementById('not-live-message').classList.remove('hidden');
+                document.getElementById('live-content').classList.add('hidden');
+            }
+        } catch (error) {
+            console.error('Error checking event status:', error);
+            // Default to showing live content to preserve data
+            document.getElementById('not-live-message').classList.add('hidden');
+            document.getElementById('live-content').classList.remove('hidden');
+            loadEngagementData();
+        }
+    }
+    
+    function disableControlsForCompletedEvent() {
+        // Disable poll creation
+        const pollButtons = document.querySelectorAll('#polls-content button');
+        pollButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+        });
+        
+        // Disable Q&A controls
+        const qaButtons = document.querySelectorAll('#qna-content button');
+        qaButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+        });
+        
+        // Disable simulator
+        document.getElementById('start-sim-btn').disabled = true;
+        document.getElementById('start-sim-btn').classList.add('opacity-50', 'cursor-not-allowed');
+        
+        // Add notice about event completion
+        const notice = document.createElement('div');
+        notice.className = 'bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6';
+        notice.innerHTML = `
+            <div class="flex items-center space-x-2">
+                <i data-lucide="info" class="w-5 h-5 text-yellow-600"></i>
+                <span class="text-yellow-800 font-medium">Event Completed</span>
+            </div>
+            <p class="text-yellow-700 text-sm mt-2">This event has ended. Data is preserved for analysis, but new interactions are disabled.</p>
+        `;
+        
+        const mainContent = document.getElementById('main-content');
+        mainContent.insertBefore(notice, mainContent.firstChild);
+        
+        lucide.createIcons();
+    }
+    
+    // Load engagement data
+    async function loadEngagementData() {
+        try {
+            const response = await fetch(`/api/events/${eventId}/engagement`);
+            const data = await response.json();
+            
+            if (data.success) {
+                updateLiveStats(data);
+                
+                // Load persistent polls and Q&A data
+                polls = data.polls || [];
+                qaQuestions = data.questions || [];
+                
+                // Show content if we have data
+                checkAndUpdateDisplay();
+                
+                if (polls.length > 0 || qaQuestions.length > 0) {
+                    displayPolls();
+                    displayQAQuestions();
+                    updateQAStats();
+                    createEngagementChart(data.breakdown);
+                    createAttendanceChart();
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error loading engagement data:', error);
+            loadMockEngagementData();
+        }
+    }
+    
+    function loadMockEngagementData() {
+        const mockData = {
+            live_attendance: 240,
+            active_polls: 0,
+            qa_questions: 0,
+            engagement_rate: 0,
+            breakdown: [
+                { name: 'Poll Participation', value: 40 },
+                { name: 'Q&A Sessions', value: 32 },
+                { name: 'Chat Activity', value: 28 }
+            ]
+        };
+        
+        updateLiveStats(mockData);
+        // Initialize empty data
+        polls = [];
+        qaQuestions = [];
+        
+        // Show initial state
+        checkAndUpdateDisplay();
+    }
+    
+    // Check what to display based on current content
+    function checkAndUpdateDisplay() {
+        const hasPolls = polls.length > 0;
+        const hasQA = qaQuestions.length > 0;
+        const hasAnyEvents = hasPolls || hasQA;
+        
+        // Show/hide sections based on content
+        document.getElementById('no-events-message').style.display = hasAnyEvents ? 'none' : 'block';
+        document.getElementById('main-content').style.display = hasAnyEvents ? 'block' : 'none';
+        
+        // Update counters
+        updateStats();
+    }
+    
+    // Functions to show/hide create forms
+    function showCreatePollForm() {
+        document.getElementById('create-poll-form').classList.remove('hidden');
+        document.getElementById('create-qa-form').classList.add('hidden');
+        lucide.createIcons();
+    }
+    
+    function showCreateQAForm() {
+        document.getElementById('create-qa-form').classList.remove('hidden');
+        document.getElementById('create-poll-form').classList.add('hidden');
+        lucide.createIcons();
+    }
+    
+    function hideCreateForms() {
+        document.getElementById('create-poll-form').classList.add('hidden');
+        document.getElementById('create-qa-form').classList.add('hidden');
+    }
+    
+    // Initial poll creation functions
+    async function createInitialPoll() {
+        const question = document.getElementById('initial-poll-question').value.trim();
+        const option1 = document.getElementById('initial-poll-option1').value.trim();
+        const option2 = document.getElementById('initial-poll-option2').value.trim();
+        const option3 = document.getElementById('initial-poll-option3').value.trim();
+        const option4 = document.getElementById('initial-poll-option4').value.trim();
+        
+        if (!question || !option1 || !option2) {
+            alert('Please enter a question and at least 2 options');
+            return;
+        }
+        
+        const options = [option1, option2];
+        if (option3) options.push(option3);
+        if (option4) options.push(option4);
+        
+        try {
+            const response = await fetch(`/api/events/${eventId}/polls`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question: question,
+                    options: options,
+                    responses: 0,
+                    active: true
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                polls.push(result.poll);
+                hideCreateForms();
+                checkAndUpdateDisplay();
+                displayPolls();
+                
+                // Show charts and host controls now
+                createEngagementChart([
+                    { name: 'Poll Participation', value: 40 },
+                    { name: 'Q&A Sessions', value: 32 },
+                    { name: 'Chat Activity', value: 28 }
+                ]);
+                createAttendanceChart();
+                
+                alert('Poll created successfully! Simulator is now available.');
+            } else {
+                alert('Failed to create poll: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error creating poll:', error);
+            alert('Error creating poll. Please try again.');
+        }
+    }
+    
+    async function startInitialQA() {
+        const question = document.getElementById('initial-qa-question').value.trim();
+        
+        try {
+            if (question) {
+                const response = await fetch(`/api/events/${eventId}/qa-questions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        answered: false,
+                        votes: Math.floor(Math.random() * 15) + 1
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    qaQuestions.push(result.question);
+                }
+            }
+            
+            // Even if no question provided, start Q&A session
+            qaSessionActive = true;
+            hideCreateForms();
+            checkAndUpdateDisplay();
+            displayQAQuestions();
+            updateQAStats();
+            
+            // Show charts and host controls now
+            createEngagementChart([
+                { name: 'Poll Participation', value: 40 },
+                { name: 'Q&A Sessions', value: 32 },
+                { name: 'Chat Activity', value: 28 }
+            ]);
+            createAttendanceChart();
+            
+            alert('Q&A session started! Simulator is now available.');
+        } catch (error) {
+            console.error('Error starting Q&A:', error);
+            alert('Error starting Q&A session. Please try again.');
+        }
+    }
+    
+    function addQuickQuestion(questionText) {
+        document.getElementById('initial-qa-question').value = questionText;
+    }
+    
+    function updateLiveStats(data) {
+        document.getElementById('live-attendance').textContent = data.live_attendance || 0;
+        document.getElementById('active-polls').textContent = data.active_polls || 0;
+        document.getElementById('qa-questions').textContent = data.qa_questions || 0;
+        document.getElementById('engagement-rate').textContent = (data.engagement_rate || 0) + '%';
+    }
+    
+    function createEngagementChart(data) {
+        const ctx = document.getElementById('engagementChart').getContext('2d');
+        const colors = ['#3b82f6', '#10b981', '#f59e0b'];
+        
+        engagementChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: data.map(d => d.name),
+                datasets: [{
+                    data: data.map(d => d.value),
+                    backgroundColor: colors,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 1,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // Create custom legend
+        const legend = document.getElementById('engagement-legend');
+        legend.innerHTML = '';
+        data.forEach((item, index) => {
+            const legendItem = document.createElement('div');
+            legendItem.className = 'flex items-center justify-between';
+            legendItem.innerHTML = `
+                <div class="flex items-center">
+                    <div class="w-3 h-3 rounded-full mr-2" style="background-color: ${colors[index]}"></div>
+                    <span class="text-sm text-gray-600">${item.name}</span>
+                </div>
+                <span class="text-sm font-medium text-gray-900">${item.value}%</span>
+            `;
+            legend.appendChild(legendItem);
+        });
+    }
+    
+    function createAttendanceChart() {
+        const ctx = document.getElementById('attendanceChart').getContext('2d');
+        const attendanceData = [
+            {time: '10:00', attendees: 150},
+            {time: '10:30', attendees: 180},
+            {time: '11:00', attendees: 220},
+            {time: '11:30', attendees: 240},
+            {time: '12:00', attendees: 210},
+            {time: '12:30', attendees: 185}
+        ];
+        
+        attendanceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: attendanceData.map(d => d.time),
+                datasets: [{
+                    label: 'Attendees',
+                    data: attendanceData.map(d => d.attendees),
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 2,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+    
+    function loadPolls() {
+        polls = [
+            { id: 1, question: "What's your favorite session topic?", responses: 145, active: true },
+            { id: 2, question: "Rate the venue quality", responses: 89, active: false },
+            { id: 3, question: "How likely are you to recommend this event?", responses: 67, active: true }
+        ];
+        displayPolls();
+    }
+    
+    function displayPolls() {
+        const pollsList = document.getElementById('polls-list');
+        pollsList.innerHTML = '';
+        
+        polls.forEach(poll => {
+            const pollDiv = document.createElement('div');
+            pollDiv.className = 'p-4 border border-gray-100 rounded-lg mb-4';
+            
+            // Calculate percentages for each option
+            const totalVotes = poll.responses || 0;
+            let optionsHtml = '';
+            
+            if (poll.options && poll.option_votes) {
+                optionsHtml = poll.options.map(option => {
+                    const votes = poll.option_votes[option] || 0;
+                    const percentage = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
+                    return `
+                        <div class="flex items-center justify-between text-sm mt-2">
+                            <span class="text-gray-600">${option}</span>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-20 bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-600 h-2 rounded-full" style="width: ${percentage}%"></div>
+                                </div>
+                                <span class="text-gray-700 font-medium">${percentage}% (${votes})</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            pollDiv.innerHTML = `
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex-1">
+                        <p class="font-medium text-gray-900">${poll.question}</p>
+                        <p class="text-sm text-gray-500">${poll.responses || 0} total responses</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${poll.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                            ${poll.active ? 'Active' : 'Closed'}
+                        </span>
+                        <button onclick="togglePoll(${poll.id})" class="p-1 text-gray-400 hover:text-gray-600">
+                            <i data-lucide="${poll.active ? 'pause' : 'play'}" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                ${optionsHtml}
+            `;
+            pollsList.appendChild(pollDiv);
+        });
+        
+        lucide.createIcons();
+    }
+    
+    function loadQAQuestions() {
+        qaQuestions = [
+            { id: 1, question: "What are the best practices for event marketing?", answered: false, votes: 15 },
+            { id: 2, question: "How do you handle last-minute cancellations?", answered: true, votes: 12 },
+            { id: 3, question: "Can you share tips for virtual event engagement?", answered: false, votes: 8 },
+            { id: 4, question: "What metrics should we track during events?", answered: true, votes: 22 }
+        ];
+        displayQAQuestions();
+    }
+    
+    function displayQAQuestions() {
+        const qaList = document.getElementById('qa-list');
+        qaList.innerHTML = '';
+        
+        qaQuestions.forEach(qa => {
+            const qaDiv = document.createElement('div');
+            qaDiv.className = 'p-4 border border-gray-100 rounded-lg';
+            qaDiv.innerHTML = `
+                <div class="flex items-start justify-between mb-2">
+                    <p class="font-medium text-gray-900 flex-1">${qa.question}</p>
+                    <span class="px-2 py-1 rounded-full text-xs font-medium ml-2 ${qa.answered ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                        ${qa.answered ? 'Answered' : 'Pending'}
+                    </span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-500">${qa.votes} votes</span>
+                    <button onclick="toggleAnswer(${qa.id})" class="text-sm text-blue-600 hover:text-blue-700">
+                        ${qa.answered ? 'Mark as Pending' : 'Mark as Answered'}
+                    </button>
+                </div>
+            `;
+            qaList.appendChild(qaDiv);
+        });
+    }
+    
+    function addPoll() {
+        const question = document.getElementById('new-poll-question').value.trim();
+        if (!question) return;
+        
+        const newPoll = {
+            id: Date.now(),
+            question: question,
+            responses: 0,
+            active: true
+        };
+        polls.push(newPoll);
+        displayPolls();
+        document.getElementById('new-poll-question').value = '';
+        
+        // Update active polls count
+        const activePollsCount = polls.filter(p => p.active).length;
+        document.getElementById('active-polls').textContent = activePollsCount;
+    }
+    
+    function togglePoll(id) {
+        const poll = polls.find(p => p.id === id);
+        if (poll) {
+            poll.active = !poll.active;
+            displayPolls();
+            
+            // Update active polls count
+            const activePollsCount = polls.filter(p => p.active).length;
+            document.getElementById('active-polls').textContent = activePollsCount;
+        }
+    }
+    
+    function toggleAnswer(id) {
+        const qa = qaQuestions.find(q => q.id === id);
+        if (qa) {
+            qa.answered = !qa.answered;
+            displayQAQuestions();
+        }
+    }
+    
+    // Auto-refresh live data every 30 seconds
+    setInterval(async () => {
+        try {
+            const response = await fetch('/api/live-updates');
+            const data = await response.json();
+            
+            document.getElementById('live-attendance').textContent = data.attendance || 0;
+            document.getElementById('qa-questions').textContent = data.qa_questions || 0;
+        } catch (error) {
+            console.error('Error updating live data:', error);
+        }
+    }, 30000);
+    
+    // Load data when page loads
+    document.addEventListener('DOMContentLoaded', checkEventStatus);
+    
+    // Tab switching functionality
+    function switchTab(tabName) {
+        // Hide all tab content
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.add('hidden');
+        });
+        
+        // Remove active class from all tabs
+        document.querySelectorAll('[id$="-tab"]').forEach(tab => {
+            tab.className = 'flex-1 px-4 py-2 text-sm font-medium rounded-md text-gray-500 hover:text-gray-700';
+        });
+        
+        // Show selected tab content
+        document.getElementById(`${tabName}-content`).classList.remove('hidden');
+        
+        // Add active class to selected tab
+        document.getElementById(`${tabName}-tab`).className = 'flex-1 px-4 py-2 text-sm font-medium rounded-md bg-white text-blue-600 shadow-sm';
+        
+        // Re-initialize icons for the newly shown content
+        lucide.createIcons();
+    }
+    
+    // Poll Management Functions
+    async function createPoll() {
+        const question = document.getElementById('poll-question').value.trim();
+        const option1 = document.getElementById('poll-option1').value.trim();
+        const option2 = document.getElementById('poll-option2').value.trim();
+        const option3 = document.getElementById('poll-option3').value.trim();
+        const option4 = document.getElementById('poll-option4').value.trim();
+        
+        if (!question || !option1 || !option2) {
+            alert('Please enter a question and at least 2 options');
+            return;
+        }
+        
+        const options = [option1, option2];
+        if (option3) options.push(option3);
+        if (option4) options.push(option4);
+        
+        try {
+            const response = await fetch(`/api/events/${eventId}/polls`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question: question,
+                    options: options,
+                    responses: 0,
+                    active: true
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                polls.push(result.poll);
+                displayPolls();
+                
+                // Clear form
+                document.getElementById('poll-question').value = '';
+                document.getElementById('poll-option1').value = '';
+                document.getElementById('poll-option2').value = '';
+                document.getElementById('poll-option3').value = '';
+                document.getElementById('poll-option4').value = '';
+                
+                // Update counters
+                updateStats();
+                
+                alert('Poll created successfully!');
+            } else {
+                alert('Failed to create poll: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error creating poll:', error);
+            alert('Error creating poll. Please try again.');
+        }
+    }
+    
+    function createQuickPoll(type) {
+        let question, options;
+        
+        switch(type) {
+            case 'satisfaction':
+                question = 'How satisfied are you with this event?';
+                options = ['Very Unsatisfied', 'Unsatisfied', 'Neutral', 'Satisfied', 'Very Satisfied'];
+                break;
+            case 'recommendation':
+                question = 'Would you recommend this event to others?';
+                options = ['Definitely No', 'Probably No', 'Not Sure', 'Probably Yes', 'Definitely Yes'];
+                break;
+            case 'session':
+                question = 'Which session was most valuable to you?';
+                options = ['Keynote Speech', 'Panel Discussion', 'Workshop', 'Networking Session'];
+                break;
+            case 'networking':
+                question = 'How would you rate the networking opportunities?';
+                options = ['Poor', 'Fair', 'Good', 'Excellent'];
+                break;
+        }
+        
+        // Initialize option_votes
+        const option_votes = {};
+        options.forEach(option => {
+            option_votes[option] = 0;
+        });
+        
+        const newPoll = {
+            id: Date.now(),
+            question: question,
+            options: options,
+            option_votes: option_votes,
+            responses: 0,
+            active: true,
+            created: new Date().toISOString()
+        };
+        
+        polls.push(newPoll);
+        displayPolls();
+        updateStats();
+        
+        alert(`Quick poll "${question}" created successfully!`);
+    }
+    
+    // Q&A Management Functions
+    let qaSessionActive = false;
+    
+    function toggleQASession() {
+        qaSessionActive = !qaSessionActive;
+        const btn = document.getElementById('qa-toggle-btn');
+        
+        if (qaSessionActive) {
+            btn.innerHTML = '<i data-lucide="mic-off" class="w-4 h-4 inline mr-2"></i>Close Q&A Session';
+            btn.className = 'flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700';
+        } else {
+            btn.innerHTML = '<i data-lucide="mic" class="w-4 h-4 inline mr-2"></i>Open Q&A Session';
+            btn.className = 'flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700';
+        }
+        
+        lucide.createIcons();
+    }
+    
+    function addSampleQuestion() {
+        const question = document.getElementById('sample-question').value.trim();
+        if (!question) {
+            alert('Please enter a question');
+            return;
+        }
+        
+        const newQuestion = {
+            id: Date.now(),
+            question: question,
+            answered: false,
+            votes: Math.floor(Math.random() * 30) + 1,
+            timestamp: new Date().toISOString()
+        };
+        
+        qaQuestions.push(newQuestion);
+        displayQAQuestions();
+        document.getElementById('sample-question').value = '';
+        updateQAStats();
+        
+        alert('Sample question added successfully!');
+    }
+    
+    function clearAllQuestions() {
+        if (confirm('Are you sure you want to clear all Q&A questions?')) {
+            qaQuestions = [];
+            displayQAQuestions();
+            updateQAStats();
+        }
+    }
+    
+    function updateQAStats() {
+        const total = qaQuestions.length;
+        const answered = qaQuestions.filter(q => q.answered).length;
+        const pending = total - answered;
+        const avgVotes = total > 0 ? Math.round(qaQuestions.reduce((sum, q) => sum + q.votes, 0) / total) : 0;
+        
+        document.getElementById('total-questions').textContent = total;
+        document.getElementById('answered-questions').textContent = answered;
+        document.getElementById('pending-questions').textContent = pending;
+        document.getElementById('avg-votes').textContent = avgVotes;
+        
+        // Update main counter
+        document.getElementById('qa-questions').textContent = total;
+    }
+    
+    // Activity Simulator Functions
+    let simulatorInterval = null;
+    let simulatorStartTime = null;
+    let simulatorActivitiesCount = 0;
+    
+    function startActivitySimulator() {
+        const activityType = document.getElementById('sim-activity-type').value;
+        const intensity = document.getElementById('sim-intensity').value;
+        const duration = parseInt(document.getElementById('sim-duration').value);
+        
+        // Check if we have any polls or Q&A to simulate
+        if (activityType === 'polls' && polls.length === 0) {
+            alert('Please create at least one poll before starting the poll simulator.');
+            return;
+        }
+        
+        // Get delay range based on intensity (faster for better demonstration)
+        let delayRange;
+        switch(intensity) {
+            case 'low': delayRange = { min: 8000, max: 15000 }; break; // 8-15 seconds
+            case 'medium': delayRange = { min: 3000, max: 8000 }; break; // 3-8 seconds  
+            case 'high': delayRange = { min: 1000, max: 3000 }; break; // 1-3 seconds
+        }
+        
+        // Update UI
+        document.getElementById('start-sim-btn').disabled = true;
+        document.getElementById('stop-sim-btn').disabled = false;
+        document.getElementById('sim-status').textContent = 'Running';
+        document.getElementById('sim-status').className = 'px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full';
+        
+        // Reset counters
+        simulatorActivitiesCount = 0;
+        simulatorStartTime = Date.now();
+        
+        // Clear activity log
+        const log = document.getElementById('sim-activity-log');
+        log.innerHTML = '<p class="text-sm text-gray-500">Starting simulator...</p>';
+        
+        // Start simulator
+        console.log(`🚀 Starting ${activityType} simulator for ${duration} minutes`);
+        
+        // Function to schedule next activity
+        function scheduleNextActivity() {
+            const elapsed = Date.now() - simulatorStartTime;
+            const durationMs = duration * 60 * 1000;
+            
+            if (elapsed >= durationMs) {
+                stopActivitySimulator();
+                return;
+            }
+            
+            // Calculate next delay
+            const baseDelay = delayRange.min + Math.random() * (delayRange.max - delayRange.min);
+            
+            simulatorInterval = setTimeout(async () => {
+                try {
+                    // Generate activity based on type
+                    if (activityType === 'polls' || (activityType === 'mixed' && Math.random() > 0.6)) {
+                        await simulatePollResponse();
+                    } else {
+                        await simulateQAQuestion();
+                    }
+                    
+                    // Update progress
+                    const newElapsed = Date.now() - simulatorStartTime;
+                    const progress = (newElapsed / durationMs) * 100;
+                    document.getElementById('sim-progress').style.width = `${Math.min(progress, 100)}%`;
+                    
+                    const remaining = Math.max(0, Math.ceil((durationMs - newElapsed) / 1000));
+                    const minutes = Math.floor(remaining / 60);
+                    const seconds = remaining % 60;
+                    document.getElementById('sim-time-remaining').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    
+                    // Schedule next activity
+                    scheduleNextActivity();
+                } catch (error) {
+                    console.error('Error in simulator:', error);
+                    addSimulatorLog(`❌ Error: ${error.message}`);
+                    scheduleNextActivity(); // Continue despite error
+                }
+            }, baseDelay);
+        }
+        
+        // Start the first activity
+        scheduleNextActivity();
+    }
+    
+    function stopActivitySimulator() {
+        if (simulatorInterval) {
+            clearTimeout(simulatorInterval);
+            simulatorInterval = null;
+        }
+        
+        // Update UI
+        document.getElementById('start-sim-btn').disabled = false;
+        document.getElementById('stop-sim-btn').disabled = true;
+        document.getElementById('sim-status').textContent = 'Stopped';
+        document.getElementById('sim-status').className = 'px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full';
+        document.getElementById('sim-time-remaining').textContent = '--:--';
+        document.getElementById('sim-progress').style.width = '0%';
+        
+        addSimulatorLog(`⏹️ Simulator stopped. Generated ${simulatorActivitiesCount} activities total`);
+        console.log(`⏹️ Simulator stopped. Generated ${simulatorActivitiesCount} activities`);
+    }
+    
+    async function simulatePollResponse() {
+        if (polls.length === 0) {
+            addSimulatorLog(`⚠️ No polls available for simulation`);
+            return;
+        }
+        
+        const activePoll = polls.find(p => p.active);
+        if (!activePoll) {
+            addSimulatorLog(`⚠️ No active polls available for simulation`);
+            return;
+        }
+        
+        // Initialize option_votes if it doesn't exist
+        if (!activePoll.option_votes && activePoll.options) {
+            activePoll.option_votes = {};
+            activePoll.options.forEach(option => {
+                activePoll.option_votes[option] = 0;
+            });
+        }
+        
+        // Simulate realistic voting patterns
+        if (activePoll.options && activePoll.option_votes) {
+            // Choose a random option with weighted probability
+            const randomIndex = Math.floor(Math.random() * activePoll.options.length);
+            const selectedOption = activePoll.options[randomIndex];
+            
+            // Add vote to the selected option
+            activePoll.option_votes[selectedOption] = (activePoll.option_votes[selectedOption] || 0) + 1;
+            activePoll.responses = (activePoll.responses || 0) + 1;
+            
+            // Save to backend (without blocking the UI)
+            fetch(`/api/events/${eventId}/polls/${activePoll.id}/vote`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    option: selectedOption
+                })
+            }).catch(error => {
+                console.error('Error saving vote:', error);
+                // Continue simulation even if backend save fails
+            });
+            
+            addSimulatorLog(`📊 Poll "${activePoll.question.substring(0, 30)}..." received vote for "${selectedOption}" (Total: ${activePoll.responses})`);
+        } else {
+            // For polls without options, just increase response count
+            activePoll.responses = (activePoll.responses || 0) + 1;
+            addSimulatorLog(`📊 Poll "${activePoll.question.substring(0, 30)}..." received response (Total: ${activePoll.responses})`);
+        }
+        
+        // Update the display immediately
+        displayPolls();
+        updateStats();
+        
+        simulatorActivitiesCount++;
+        document.getElementById('sim-activities-count').textContent = simulatorActivitiesCount;
+    }
+    
+    async function simulateQAQuestion() {
+        const sampleQuestions = [
+            "What are the best practices for virtual events?",
+            "How can we improve audience engagement?",
+            "What tools do you recommend for event management?",
+            "How do you measure event success?",
+            "What's the future of hybrid events?",
+            "How can we better facilitate networking?",
+            "What content formats work best for online events?",
+            "How do you handle technical issues during live events?",
+            "What's the ROI of virtual vs in-person events?",
+            "How do you ensure good audio quality during live streams?",
+            "What are some creative ways to break the ice virtually?",
+            "How can we make virtual networking more effective?",
+            "What's the ideal length for virtual event sessions?",
+            "How do you keep attendees engaged throughout the day?",
+            "What backup plans should we have for technical failures?",
+            "How can we collect meaningful feedback from attendees?",
+            "What are the best platforms for hybrid events?",
+            "How do you handle time zones for global events?"
+        ];
+        
+        const randomQuestion = sampleQuestions[Math.floor(Math.random() * sampleQuestions.length)];
+        
+        const newQuestion = {
+            id: Date.now(),
+            question: randomQuestion,
+            answered: false,
+            votes: Math.floor(Math.random() * 15) + 1,
+            timestamp: new Date().toISOString()
+        };
+        
+        // Add question locally first for immediate UI update
+        qaQuestions.push(newQuestion);
+        
+        // Save to backend (without blocking the UI)
+        fetch(`/api/events/${eventId}/qa-questions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newQuestion)
+        }).catch(error => {
+            console.error('Error saving Q&A question:', error);
+            // Question is already added locally, so continue
+        });
+        
+        // Update the display immediately
+        displayQAQuestions();
+        updateQAStats();
+        
+        simulatorActivitiesCount++;
+        document.getElementById('sim-activities-count').textContent = simulatorActivitiesCount;
+        
+        addSimulatorLog(`❓ New Q&A question: "${randomQuestion.substring(0, 40)}..." (${newQuestion.votes} votes)`);
+    }
+    
+    function addSimulatorLog(message) {
+        const log = document.getElementById('sim-activity-log');
+        const timestamp = new Date().toLocaleTimeString();
+        
+        const logEntry = document.createElement('div');
+        logEntry.className = 'text-sm text-gray-600';
+        logEntry.innerHTML = `<span class="text-gray-400">${timestamp}</span> ${message}`;
+        
+        log.insertBefore(logEntry, log.firstChild);
+        
+        // Keep only last 10 entries
+        while (log.children.length > 10) {
+            log.removeChild(log.lastChild);
+        }
+    }
+    
+    // Enhanced Export Function with Better Structure
+    function exportAllDataAsCSV() {
+        const timestamp = new Date().toISOString();
+        const eventTitle = '{{ event_title }}';
+        const eventId = '{{ event_id }}';
+        const liveAttendance = document.getElementById('live-attendance').textContent;
+        const engagementRate = document.getElementById('engagement-rate').textContent;
+        
+        // Create comprehensive CSV with multiple sections
+        let csvContent = '';
+        
+        // Section 1: Event Summary
+        csvContent += '=== EVENT SUMMARY ===\n';
+        csvContent += 'Event ID,Event Title,Export Date,Live Attendance,Engagement Rate,Total Polls,Total Q&A Questions\n';
+        csvContent += `${eventId},"${eventTitle}",${timestamp},${liveAttendance},${engagementRate},${polls.length},${qaQuestions.length}\n\n`;
+        
+        // Section 2: Detailed Poll Data
+        csvContent += '=== POLLS DATA ===\n';
+        csvContent += 'Poll ID,Question,Status,Total Responses,Option 1,Option 1 Votes,Option 1 %,Option 2,Option 2 Votes,Option 2 %,Option 3,Option 3 Votes,Option 3 %,Option 4,Option 4 Votes,Option 4 %,Created Date\n';
+        
+        polls.forEach(poll => {
+            const totalVotes = poll.responses || 0;
+            const options = poll.options || [];
+            const optionVotes = poll.option_votes || {};
+            
+            // Prepare option data (up to 4 options)
+            const optionData = [];
+            for (let i = 0; i < 4; i++) {
+                const option = options[i] || '';
+                const votes = optionVotes[option] || 0;
+                const percentage = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
+                optionData.push(`"${option}",${votes},${percentage}%`);
+            }
+            
+            csvContent += `${poll.id},"${poll.question}",${poll.active ? 'Active' : 'Closed'},${totalVotes},${optionData.join(',')},${poll.created || timestamp}\n`;
+        });
+        
+        csvContent += '\n';
+        
+        // Section 3: Q&A Questions Data
+        csvContent += '=== Q&A QUESTIONS ===\n';
+        csvContent += 'Question ID,Question Text,Status,Votes,Category,Timestamp,Response Priority\n';
+        
+        qaQuestions.forEach(qa => {
+            const priority = qa.votes > 20 ? 'High' : qa.votes > 10 ? 'Medium' : 'Low';
+            const category = categorizeQuestion(qa.question);
+            
+            csvContent += `${qa.id},"${qa.question}",${qa.answered ? 'Answered' : 'Pending'},${qa.votes},"${category}",${qa.timestamp || timestamp},"${priority}"\n`;
+        });
+        
+        csvContent += '\n';
+        
+        // Section 4: Engagement Analytics
+        csvContent += '=== ENGAGEMENT ANALYTICS ===\n';
+        csvContent += 'Metric,Value,Calculation,Notes\n';
+        
+        const totalPollResponses = polls.reduce((sum, poll) => sum + (poll.responses || 0), 0);
+        const activePollsCount = polls.filter(p => p.active).length;
+        const answeredQuestionsCount = qaQuestions.filter(q => q.answered).length;
+        const avgVotesPerQuestion = qaQuestions.length > 0 ? Math.round(qaQuestions.reduce((sum, q) => sum + q.votes, 0) / qaQuestions.length) : 0;
+        const responseRate = liveAttendance > 0 ? Math.round((totalPollResponses / parseInt(liveAttendance)) * 100) : 0;
+        
+        csvContent += `Total Poll Responses,${totalPollResponses},Sum of all poll responses,Indicates overall poll engagement\n`;
+        csvContent += `Active Polls,${activePollsCount},Count of currently active polls,Shows ongoing engagement opportunities\n`;
+        csvContent += `Q&A Response Rate,${Math.round((answeredQuestionsCount / qaQuestions.length) * 100)}%,Answered questions / Total questions,Measures host responsiveness\n`;
+        csvContent += `Average Question Popularity,${avgVotesPerQuestion} votes,Average votes per question,Indicates audience interest level\n`;
+        csvContent += `Audience Response Rate,${responseRate}%,Total responses / Live attendance,Overall engagement percentage\n`;
+        csvContent += `Event Duration,Live,Real-time tracking,Event currently in progress\n`;
+        
+        csvContent += '\n';
+        
+        // Section 5: Detailed Poll Breakdown
+        csvContent += '=== POLL RESPONSE BREAKDOWN ===\n';
+        csvContent += 'Poll ID,Poll Question,Option,Votes,Percentage,Vote Share\n';
+        
+        polls.forEach(poll => {
+            const totalVotes = poll.responses || 0;
+            if (poll.options && poll.option_votes) {
+                poll.options.forEach(option => {
+                    const votes = poll.option_votes[option] || 0;
+                    const percentage = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
+                    const voteShare = totalPollResponses > 0 ? Math.round((votes / totalPollResponses) * 100) : 0;
+                    
+                    csvContent += `${poll.id},"${poll.question}","${option}",${votes},${percentage}%,${voteShare}% of total\n`;
+                });
+            }
+        });
+        
+        csvContent += '\n';
+        
+        // Section 6: Time-based Analysis
+        csvContent += '=== TIME-BASED ANALYSIS ===\n';
+        csvContent += 'Hour,Poll Responses,Q&A Questions,Activity Level\n';
+        
+        // Group activities by hour (mock data for demonstration)
+        const hourlyData = {};
+        const currentHour = new Date().getHours();
+        
+        for (let i = currentHour - 5; i <= currentHour; i++) {
+            const hour = i < 0 ? 24 + i : i;
+            const pollResponses = Math.floor(Math.random() * 20) + 5;
+            const qaQuestions = Math.floor(Math.random() * 5) + 1;
+            const activityLevel = pollResponses + qaQuestions > 20 ? 'High' : pollResponses + qaQuestions > 10 ? 'Medium' : 'Low';
+            
+            csvContent += `${hour}:00,${pollResponses},${qaQuestions},${activityLevel}\n`;
+        }
+        
+        csvContent += '\n';
+        
+        // Section 7: Export Metadata
+        csvContent += '=== EXPORT METADATA ===\n';
+        csvContent += 'Export Field,Value\n';
+        csvContent += `Export Timestamp,${timestamp}\n`;
+        csvContent += `Exported By,Event Host Dashboard\n`;
+        csvContent += `Data Source,Live Event Engagement System\n`;
+        csvContent += `File Format,CSV (Comma Separated Values)\n`;
+        csvContent += `Total Records,${polls.length + qaQuestions.length + 6} data points\n`;
+        csvContent += `Data Currency,Real-time (live event)\n`;
+        csvContent += `Event Status,${document.getElementById('end-event-btn').disabled ? 'Completed' : 'Live'}\n`;
+        
+        // Generate filename with timestamp
+        const dateStr = new Date().toISOString().split('T')[0];
+        const timeStr = new Date().toTimeString().split(' ')[0].replace(/:/g, '-');
+        const filename = `event_engagement_complete_${eventId}_${dateStr}_${timeStr}.csv`;
+        
+        // Download CSV
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        alert(`✅ Complete engagement data exported successfully!\n\nFile: ${filename}\n\nIncludes:\n• Event summary & metrics\n• Detailed poll data with percentages\n• Q&A questions with categories\n• Time-based analysis\n• Export metadata`);
+    }
+    
+    // Helper function to categorize questions
+    function categorizeQuestion(question) {
+        const lowerQuestion = question.toLowerCase();
+        
+        if (lowerQuestion.includes('technical') || lowerQuestion.includes('platform') || lowerQuestion.includes('tool')) {
+            return 'Technical';
+        } else if (lowerQuestion.includes('best practice') || lowerQuestion.includes('strategy') || lowerQuestion.includes('approach')) {
+            return 'Best Practices';
+        } else if (lowerQuestion.includes('future') || lowerQuestion.includes('trend') || lowerQuestion.includes('upcoming')) {
+            return 'Future/Trends';
+        } else if (lowerQuestion.includes('engage') || lowerQuestion.includes('audience') || lowerQuestion.includes('interaction')) {
+            return 'Engagement';
+        } else if (lowerQuestion.includes('measure') || lowerQuestion.includes('metric') || lowerQuestion.includes('success')) {
+            return 'Analytics/Metrics';
+        } else {
+            return 'General';
+        }
+    }
+    
+    function updateStats() {
+        const activePollsCount = polls.filter(p => p.active).length;
+        const totalPollResponses = polls.reduce((sum, poll) => sum + poll.responses, 0);
+        const liveAttendance = document.getElementById('live-attendance').textContent;
+        
+        // Update main stats
+        document.getElementById('active-polls').textContent = activePollsCount;
+        
+        // Update export stats
+        document.getElementById('export-polls-count').textContent = polls.length;
+        document.getElementById('export-poll-responses').textContent = totalPollResponses;
+        document.getElementById('export-qna-count').textContent = qaQuestions.length;
+        document.getElementById('export-attendance').textContent = liveAttendance;
+        
+        // Calculate and update engagement rate
+        const hasActivity = polls.length > 0 || qaQuestions.length > 0;
+        const baseRate = hasActivity ? Math.min(75 + Math.floor((totalPollResponses + qaQuestions.length) / 10), 95) : 0;
+        document.getElementById('engagement-rate').textContent = baseRate + '%';
+    }
+    
+    // End Event with Analytics Capture
+    async function endEventWithAnalytics() {
+        if (!confirm('🔴 End this event?\n\nThis will:\n• Stop all live interactions\n• Capture all engagement data\n• Generate post-event analytics\n• Create downloadable insights report\n\nThis action cannot be undone.')) {
+            return;
+        }
+        
+        try {
+            // Show processing indicator
+            const btn = document.getElementById('end-event-btn');
+            if (btn) {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-2"></i>Processing Analytics...';
+                btn.disabled = true;
+            }
+            
+            // End event and capture analytics
+            const response = await fetch(`/api/events/${eventId}/end-event`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Update UI to show event ended
+                const statusEl = document.getElementById('event-status');
+                if (statusEl) {
+                    statusEl.textContent = 'Event Ended';
+                    statusEl.className = 'px-3 py-1 bg-gray-100 text-gray-800 text-sm rounded-full font-medium';
+                }
+                
+                // Disable interactive features
+                document.querySelectorAll('.poll-form, .qa-form, .simulator-controls').forEach(element => {
+                    element.style.opacity = '0.5';
+                    element.style.pointerEvents = 'none';
+                });
+                
+                // Show success message with analytics info
+                const totalPollResponses = polls.reduce((sum, p) => sum + (p.responses || 0), 0);
+                const liveAttendanceEl = document.getElementById('live-attendance');
+                const engagementRateEl = document.getElementById('engagement-rate');
+                
+                const liveAttendance = liveAttendanceEl ? liveAttendanceEl.textContent : 'N/A';
+                const engagementRate = engagementRateEl ? engagementRateEl.textContent : 'N/A';
+                
+                const analyticsMessage = `✅ Event ended successfully!
+
+📊 Analytics Captured:
+• ${polls.length} polls with ${totalPollResponses} total responses
+• ${qaQuestions.length} Q&A questions
+• Live attendance: ${liveAttendance}
+• Engagement rate: ${engagementRate}
+
+🎯 Next Steps:
+• View detailed insights in Post-Event Analytics
+• Download comprehensive reports
+• Access sentiment analysis
+• Get AI-powered recommendations
+
+Redirecting to analytics dashboard...`;
+                
+                alert(analyticsMessage);
+                
+                // Redirect to post-analytics page after delay
+                setTimeout(() => {
+                    window.location.href = `/events/${eventId}/post-analytics`;
+                }, 3000);
+                
+            } else {
+                throw new Error(result.error || 'Failed to end event');
+            }
+            
+        } catch (error) {
+            console.error('Error ending event:', error);
+            alert(`❌ Error ending event: ${error.message}\n\nPlease try again or contact support.`);
+            
+            // Restore button
+            const btn = document.getElementById('end-event-btn');
+            if (btn) {
+                btn.innerHTML = '<i data-lucide="square" class="w-4 h-4"></i><span>End Event & Capture Analytics</span>';
+                btn.disabled = false;
+            }
+        }
+    }
+
+    // Legacy function for backward compatibility
+    function endEvent() {
+        endEventWithAnalytics();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EventPro - Analytics Dashboard{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .sidebar-active {
+            background-color: rgb(239 246 255);
+            color: rgb(37 99 235);
+            border-right: 2px solid rgb(37 99 235);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white shadow-sm border-r border-gray-100 h-full">
+            <!-- Logo -->
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <i data-lucide="calendar" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <span class="text-xl font-bold text-gray-800">EventPro</span>
+                </div>
+            </div>
+
+            <!-- Menu Items -->
+            <nav class="mt-6">
+                <ul class="space-y-1 px-3">
+                    {% if session.get('logged_in') %}
+                    <li>
+                        <a href="/events" class="sidebar-link w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900" data-page="events">
+                            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                            <span class="font-medium">Dashboard</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li>
+                        <a href="/" class="sidebar-link w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900" data-page="home">
+                            <i data-lucide="home" class="w-5 h-5"></i>
+                            <span class="font-medium">Home</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li>
+                        <a href="/create-event" class="sidebar-link w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900" data-page="create-event">
+                            <i data-lucide="plus" class="w-5 h-5"></i>
+                            <span class="font-medium">Create Event</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/events" class="sidebar-link w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900" data-page="events">
+                            <i data-lucide="calendar" class="w-5 h-5"></i>
+                            <span class="font-medium">Events Created</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/profile" class="sidebar-link w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900" data-page="profile">
+                            <i data-lucide="user" class="w-5 h-5"></i>
+                            <span class="font-medium">Profile</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/logout" onclick="return confirm('Are you sure you want to logout?')" class="sidebar-link w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors text-gray-600 hover:bg-gray-50 hover:text-gray-900" data-page="logout">
+                            <i data-lucide="log-out" class="w-5 h-5"></i>
+                            <span class="font-medium">Logout</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-auto">
+            <!-- Header -->
+            <div class="bg-white shadow-sm border-b border-gray-100 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <h1 class="text-2xl font-semibold text-gray-800">{% block page_title %}Dashboard{% endblock %}</h1>
+                    
+                    <div class="flex items-center space-x-4">
+                        <!-- Search Bar -->
+                        <div class="relative">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"></i>
+                            <input
+                                type="text"
+                                placeholder="Search"
+                                class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+                            />
+                        </div>
+                        
+                        <!-- Notifications -->
+                        <button class="p-2 text-gray-400 hover:text-gray-600 relative">
+                            <i data-lucide="bell" class="w-5 h-5"></i>
+                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                                3
+                            </span>
+                        </button>
+                        
+                        <!-- User Profile -->
+                        <div class="flex items-center space-x-2">
+                            <img
+                                src="https://via.placeholder.com/32"
+                                alt="Profile"
+                                class="w-8 h-8 rounded-full"
+                            />
+                            <span class="text-sm font-medium text-gray-700">Event Host</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Content -->
+            <main class="p-6">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Set active sidebar link
+        const currentPage = window.location.pathname;
+        const sidebarLinks = document.querySelectorAll('.sidebar-link');
+        
+        sidebarLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href === currentPage || (currentPage === '/dashboard' && href === '/dashboard')) {
+                link.classList.add('sidebar-active');
+                link.classList.remove('text-gray-600', 'hover:bg-gray-50', 'hover:text-gray-900');
+            }
+        });
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
