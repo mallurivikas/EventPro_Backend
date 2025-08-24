@@ -11,6 +11,9 @@ A modern, responsive Event Analytics Dashboard for event hosts built with Flask 
 - **Post-Event Feedback**: Analyze attendee feedback and satisfaction ratings
 - **Data Export**: Export analytics data as CSV/Excel files
 
+## Frontend Deployment Link (For UI Demonstration)
+https://mallurivikas.github.io/EventPro_Frontend/
+
 ## Tech Stack
 
 **Frontend:**
