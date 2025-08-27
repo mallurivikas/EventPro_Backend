@@ -14,6 +14,9 @@ A modern, responsive Event Analytics Dashboard for event hosts built with Flask 
 ## Frontend Deployment Link (For UI Demonstration)
 https://mallurivikas.github.io/EventPro_Frontend/
 
+## Complete Project Demonstration Youtube Link
+https://youtu.be/dlt9zbUZImc
+
 ## Tech Stack
 
 **Frontend:**
